@@ -1,0 +1,52 @@
+Name:                sparkle
+Version:             0
+Synopsis:            Planning tool designed for high school technology students
+Category:            Web
+
+Description:
+    /Sparkle/ is a planning tool designed for high school technology
+    students. It aims to help students manage the time they spend on
+    their projects, and guide through the thought processes needed for
+    them to succeed.
+
+Homepage:            https://github.com/lfairy/sparkle
+Bug-Reports:         https://github.com/lfairy/sparkle/issues
+
+Author:              Chris Wong
+Maintainer:          lambda.fairy@gmail.com
+
+License:             AGPL-3
+License-File:        LICENSE
+Copyright:           2013 Chris Wong
+
+Build-Type:          Simple
+Extra-Source-Files:  README.mkd
+Cabal-Version:       >= 1.8
+
+
+Executable sparkle
+    Main-Is:     Main.hs
+    Build-Depends:
+        base == 4.*,
+        text,
+
+        happstack-server == 7.1.*,
+
+        acid-state,
+        safecopy,
+
+        boomerang,
+        web-routes,
+        web-routes-happstack,
+        web-routes-boomerang
+
+    Other-Modules:
+        Sparkle.Handlers
+        Sparkle.Routes
+
+    GHC-Options: -Wall
+
+
+Source-Repository head
+    Type:     git
+    Location: https://github.com/lfairy/sparkle.git

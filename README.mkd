@@ -1,7 +1,10 @@
 ✶ Sparkle ✶
 ===========
 
-**Sparkle** is a planning tool designed for high school technology students. It aims to help users manage their time spent on their projects, and guide them through the thought processes needed for them to succeed.
+**Sparkle** is a planning tool designed for high school technology
+students. It aims to help students manage the time they spend on their
+projects, and guide them through the thought processes needed for them
+to succeed.
 
 
 Setup

@@ -10,9 +10,11 @@ import Web.Routes (RouteT)
 import Web.Routes.Happstack ()
 
 import Sparkle.Routes
+import Sparkle.Templates
 
 homePage :: RouteT Sitemap (ServerPartT IO) Response
-homePage = ok . toResponse $ T.pack "This is the home page!"
+homePage = ok . toResponse $
+    appTemplate "Project Name Here" "Content goes here"
 
 helloPage :: Maybe Text -> RouteT Sitemap (ServerPartT IO) Response
 helloPage name = ok . toResponse $ T.concat ["Hello, ", name', "!"]

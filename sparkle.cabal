@@ -32,6 +32,9 @@ Executable sparkle
 
         happstack-server == 7.1.*,
 
+        blaze-html,
+        blaze-markup,
+
         acid-state,
         safecopy,
 

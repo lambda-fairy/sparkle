@@ -46,6 +46,7 @@ Executable sparkle
     Other-Modules:
         Sparkle.Handlers
         Sparkle.Routes
+        Sparkle.Templates
 
     GHC-Options: -Wall
 

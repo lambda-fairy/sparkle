@@ -28,6 +28,7 @@ Executable sparkle
     Main-Is:     Main.hs
     Build-Depends:
         base == 4.*,
+        mtl,
         text,
 
         happstack-server == 7.1.*,
@@ -47,6 +48,7 @@ Executable sparkle
         Sparkle.Handlers
         Sparkle.Routes
         Sparkle.Templates
+        Sparkle.Types
 
     GHC-Options: -Wall
 

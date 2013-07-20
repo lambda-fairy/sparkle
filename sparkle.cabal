@@ -31,12 +31,13 @@ Executable sparkle
         mtl,
         text,
 
-        happstack-server == 7.1.*,
+        happstack-server == 7.3.*,
 
         blaze-html,
         blaze-markup,
 
-        acid-state,
+        -- Newer versions require stm >= 2.4
+        acid-state == 0.8.*,
         safecopy,
 
         boomerang,

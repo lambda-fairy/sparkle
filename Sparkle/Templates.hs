@@ -16,7 +16,7 @@ import Sparkle.Types
 
 
 pageTemplate :: Project -> Html
-pageTemplate = outerTemplate . projTitle <*> planTemplate . projTasks
+pageTemplate = outerTemplate <$> projTitle <*> planTemplate . projTasks
 
 
 outerTemplate :: Text -> Html -> Html

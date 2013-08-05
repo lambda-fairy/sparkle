@@ -23,7 +23,7 @@ outerTemplate :: Text -> Html -> Html
 outerTemplate title body = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
-        H.title $ do toHtml title; " - Sparkle"
+        H.title $ toHtml title
     H.body $ do
         H.h1 $ toHtml title
         H.div ! A.id "content" $ body
@@ -41,11 +41,12 @@ planTemplate = (H.section ! A.id "plan") . dumpChildren
             forM_ tasks $ \Task{..} ->
                 H.li $ do
                     -- Task title
-                    H.p $ do
+                    H.p $ H.label $ do
                         H.input ! A.type_ "checkbox"
+                                ! A.disabled "disabled"
                                 ! onlyIf taskDone (A.checked "checked")
                         "\xA0" -- no-break space
-                        toHtml taskTitle
+                        H.span $ toHtml taskTitle
 
                     -- Recurse in child tasks
                     when (notNull taskChildren) $

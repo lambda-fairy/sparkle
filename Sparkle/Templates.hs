@@ -24,6 +24,7 @@ outerTemplate title body = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
         H.title $ toHtml title
+        H.link ! A.rel "stylesheet" ! A.href "/static/core.css"
     H.body $ do
         H.h1 $ toHtml title
         H.div ! A.id "content" $ body
@@ -36,21 +37,21 @@ outerTemplate title body = H.docTypeHtml $ do
 planTemplate :: [Task] -> Html
 planTemplate = (H.section ! A.id "plan") . dumpChildren
   where
-    dumpChildren tasks =
-        H.ul ! onlyIf (notNull tasks) (A.class_ "task-has-children") $
-            forM_ tasks $ \Task{..} ->
-                H.li $ do
-                    -- Task title
-                    H.p $ H.label $ do
-                        H.input ! A.type_ "checkbox"
-                                ! A.disabled "disabled"
-                                ! onlyIf taskDone (A.checked "checked")
-                        "\xA0" -- no-break space
-                        H.span $ toHtml taskTitle
+    dumpChildren tasks = H.ul $
+        forM_ tasks $ \Task{..} ->
+            H.li ! onlyIf (notNull taskChildren)
+                          (A.class_ "task-has-children") $ do
+                -- Task title
+                H.label $ do
+                    H.input ! A.type_ "checkbox"
+                            ! A.disabled "disabled"
+                            ! onlyIf taskDone (A.checked "checked")
+                    "\xA0" -- no-break space
+                    H.span $ toHtml taskTitle
 
-                    -- Recurse in child tasks
-                    when (notNull taskChildren) $
-                        dumpChildren taskChildren
+                -- Recurse in child tasks
+                when (notNull taskChildren) $
+                    dumpChildren taskChildren
 
 
 -- | @onlyif b x@ returns @x@ /only if/ @b@ is True.

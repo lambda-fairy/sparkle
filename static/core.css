@@ -1,0 +1,24 @@
+html {
+  font: 100%/175% Verdana, sans-serif;
+}
+
+#plan ul {
+  list-style: none;
+  padding-left: 1.5em;
+}
+
+#plan li.task-has-children {
+  margin-top: 0.5em;
+}
+
+#plan label {
+  display: block;
+  /* Use 0% opacity instead of "transparent" to avoid awkward gaps */
+  border: 1px solid transparent;
+  border-color: rgba(255, 255, 255, 0);
+  border-radius: 2px;
+}
+
+#plan label:hover {
+  border-color: #cff;
+}

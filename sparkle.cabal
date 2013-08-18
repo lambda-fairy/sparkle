@@ -50,6 +50,8 @@ Executable sparkle
         web-routes-boomerang
 
     Other-Modules:
+        Data.List.NonEmpty.SafeCopy
+        Sparkle.Common
         Sparkle.Handlers
         Sparkle.Routes
         Sparkle.Templates

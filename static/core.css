@@ -1,10 +1,10 @@
 html {
-  font: 100%/175% Verdana, sans-serif;
+  font: 100%/150% Verdana, sans-serif;
 }
 
 #plan ul {
   list-style: none;
-  padding-left: 1.5em;
+  padding-left: 1.25em;
 }
 
 #plan li.task-has-children {
@@ -13,6 +13,7 @@ html {
 
 #plan label {
   display: block;
+  padding-left: 0.25em;
   /* Use 0% opacity instead of "transparent" to avoid awkward gaps */
   border: 1px solid transparent;
   border-color: rgba(255, 255, 255, 0);
@@ -20,5 +21,5 @@ html {
 }
 
 #plan label:hover {
-  border-color: #cff;
+  background-color: #fff0ff;
 }

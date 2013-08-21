@@ -22,6 +22,7 @@ module Sparkle.Types
     , QueryProject(..)
 
       -- * Debugging
+    , testProject
     , printTasks
     , testTasks
     , testTask
@@ -153,6 +154,11 @@ $(makeAcidic ''Project ['insertTask, 'modifyTask, 'deleteTask, 'queryProject])
 
 
 -- Debugging -----------------------------------------------------------
+
+testProject :: Project
+testProject = emptyProject
+    & projTitle .~ "Test Project"
+    & projTasks .~ testTasks
 
 printTasks :: Tasks -> IO ()
 printTasks = putStrLn . drawForest . map (fmap show)

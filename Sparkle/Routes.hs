@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell, TypeOperators #-}
 
 module Sparkle.Routes
     ( Sitemap(..)
@@ -9,16 +7,16 @@ module Sparkle.Routes
 
 import Prelude hiding ((.), id)
 import Control.Category ((.), id)
-import Data.Text (Text)
 import Text.Boomerang.TH (derivePrinterParsers)
 import Web.Routes.Boomerang
 
-data Sitemap = Home | Hello (Maybe Text)
-    deriving (Eq, Ord, Read, Show)
+import qualified Sparkle.API.Routes as API
+
+data Sitemap = Home | API API.Sitemap
+    deriving (Eq, Read, Show)
 $(derivePrinterParsers ''Sitemap)
 
 sitemap :: Router () (Sitemap :- ())
-sitemap =
-    (  rHome
-    <> rHello . (lit "hello" </> rMaybe anyText)
-    )
+sitemap
+    =  rHome
+    <> rAPI . ("api" </> "v0" </> API.sitemap)

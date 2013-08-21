@@ -28,14 +28,18 @@ Executable sparkle
     Main-Is:     Main.hs
     Build-Depends:
         base == 4.*,
+        bytestring,
         containers,
         mtl,
         text,
+        vector,
 
         lens,
         semigroups,
 
         happstack-server == 7.3.*,
+
+        aeson,
 
         blaze-html,
         blaze-markup,
@@ -51,6 +55,11 @@ Executable sparkle
 
     Other-Modules:
         Data.List.NonEmpty.SafeCopy
+        Data.Tree.Aeson
+        Sparkle
+        Sparkle.API
+        Sparkle.API.Routes
+        Sparkle.API.Handlers
         Sparkle.Common
         Sparkle.Handlers
         Sparkle.Routes

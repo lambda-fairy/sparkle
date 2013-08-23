@@ -32,7 +32,7 @@ outerTemplate title body = H.docTypeHtml $ do
 
 
 planTemplate :: Tasks -> Html
-planTemplate = (H.section ! A.id "plan") . dumpChildren
+planTemplate = (H.section ! A.id "plan") . dumpChildren . getTasks
   where
     dumpChildren tasks = H.ul $
         forM_ tasks $ \(Node t cs) ->

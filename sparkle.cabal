@@ -32,6 +32,7 @@ Executable sparkle
         containers,
         mtl,
         text,
+        unordered-containers,
         vector,
 
         lens,
@@ -55,7 +56,6 @@ Executable sparkle
 
     Other-Modules:
         Data.List.NonEmpty.SafeCopy
-        Data.Tree.Aeson
         Sparkle
         Sparkle.API
         Sparkle.API.Routes

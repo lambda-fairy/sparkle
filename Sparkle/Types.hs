@@ -11,7 +11,7 @@ module Sparkle.Types
     , emptyProject
 
     , Task(..)
-    , Tasks
+    , Tasks(..)
     , taskTitle
     , taskDone
 
@@ -31,7 +31,10 @@ module Sparkle.Types
 
 import Control.Monad.Reader (ask)
 import Data.Acid (Query, Update, makeAcidic)
+import Data.Aeson hiding ((.=))
+import Data.Aeson.TH
 import Data.Data (Data, Typeable)
+import qualified Data.HashMap.Strict as H
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty.SafeCopy ()
 import qualified Data.List.NonEmpty as L
@@ -52,7 +55,8 @@ data Project = Project
     } deriving (Show, Data, Typeable)
 
 -- | The set of tasks in the project.
-type Tasks = Forest Task
+newtype Tasks = Tasks { getTasks :: Forest Task }
+    deriving (Show, Data, Typeable)
 
 -- | A single task.
 data Task = Task
@@ -63,17 +67,15 @@ data Task = Task
 -- | A position in the task tree, represented as a list of indices.
 type Pos = NonEmpty Int
 
-$(fmap concat $ mapM makeLenses [''Task, ''Project])
-$(fmap concat $ mapM (deriveSafeCopy 0 'base) [''Task, ''Project])
+$(concatMapM makeLenses [''Task, ''Project])
+$(concatMapM (deriveSafeCopy 0 'base) [''Task, ''Tasks, ''Project])
 
 emptyProject :: Project
-emptyProject = Project "Untitled Project" [] 0
+emptyProject = Project "Untitled Project" (Tasks []) 0
 
 
 withTasks :: (Tasks -> Tasks) -> Update Project ()
-withTasks f = do
-    projRevision += 1
-    projTasks <~ f <$> use projTasks
+withTasks f = withTasks' $ \tasks -> ((), f tasks)
 
 withTasks' :: (Tasks -> (a, Tasks)) -> Update Project a
 withTasks' f = do
@@ -94,26 +96,26 @@ insertTask'
     :: Pos   -- ^ Position at which to insert the task
     -> Task  -- ^ The new task object
     -> Tasks -> Tasks
-insertTask' pos x tasks = go pos tasks
+insertTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> insertAt i (Node x []) forest
         (i, Just is') -> case splitAt i forest of
-            (before, node:after) -> before ++ [node & branches %~ go is'] ++ after
+            (before, node:after) -> before ++ [over branches (go is') node] ++ after
             _ -> forest ++ [Node x []]
 
 modifyTask'
     :: Pos   -- ^ The position of the task
     -> Task  -- ^ The new task object
     -> Tasks -> Tasks
-modifyTask' pos x tasks = go pos tasks
+modifyTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> case splitAt i forest of
-            (before, node:after) -> before ++ [node & root .~ x] ++ after
+            (before, node:after) -> before ++ [set root x node] ++ after
             _ -> fallback forest
         (i, Just is') -> case splitAt i forest of
-            (before, node:after) -> before ++ [node & branches %~ go is'] ++ after
+            (before, node:after) -> before ++ [over branches (go is') node] ++ after
             _ -> fallback forest
     -- If the task tree has changed in the mean time, add the task to
     -- the end of the branch
@@ -122,7 +124,7 @@ modifyTask' pos x tasks = go pos tasks
 deleteTask'
     :: Pos  -- ^ Task to delete
     -> Tasks -> (Maybe Task, Tasks)
-deleteTask' = go
+deleteTask' is_ (Tasks forest_) = over _2 Tasks $ go is_ forest_
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> case splitAt i forest of
@@ -130,8 +132,8 @@ deleteTask' = go
             _ -> (Nothing, forest)
         (i, Just is') -> case splitAt i forest of
             (before, node:after) ->
-                let (deleted, children') = go is' (node ^. branches)
-                in  (deleted, before ++ [(branches .~ children') node] ++ after)
+                let (deleted, children') = go is' (view branches node)
+                in  (deleted, before ++ [set branches children' node] ++ after)
             _ -> (Nothing, forest)
 
 
@@ -153,6 +155,29 @@ queryProject = ask
 $(makeAcidic ''Project ['insertTask, 'modifyTask, 'deleteTask, 'queryProject])
 
 
+-- JSON serialization --------------------------------------------------
+
+instance FromJSON Tasks where
+    parseJSON = (Tasks <$>) . parseForest
+      where
+        parseForest = mapM parseTree <=< parseJSON
+        parseTree
+            = withObject "tree node" $ \v -> do
+                data_     <- v .: "data"
+                children_ <- v .: "children"
+                Node data_ <$> parseForest children_
+
+instance ToJSON Tasks where
+    toJSON = renderForest . getTasks
+      where
+        renderForest = toJSON . map renderTree
+        renderTree (Node data_ children_)
+            = Object $ H.fromList [("data", toJSON data_), ("children", renderForest children_)]
+
+$(deriveJSON (stripTypeName "task") ''Task)
+$(deriveJSON (stripTypeName "proj") ''Project)
+
+
 -- Debugging -----------------------------------------------------------
 
 testProject :: Project
@@ -161,10 +186,10 @@ testProject = emptyProject
     & projTasks .~ testTasks
 
 printTasks :: Tasks -> IO ()
-printTasks = putStrLn . drawForest . map (fmap show)
+printTasks = putStrLn . drawForest . map (fmap show) . getTasks
 
 testTasks :: Tasks
-testTasks =
+testTasks = Tasks
     [ Node (Task ">\")_" True)
         [ Node (Task "Duck" False)   []
         , Node (Task "Duck" True)    []

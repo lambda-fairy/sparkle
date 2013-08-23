@@ -3,9 +3,7 @@
 module Sparkle.API.Handlers where
 
 import Data.Aeson
-import Data.Aeson.TH
 import qualified Data.ByteString.Lazy as L
-import Data.Tree.Aeson ()
 import Happstack.Server
 import Web.Routes (RouteT)
 import Web.Routes.Happstack ()
@@ -25,6 +23,3 @@ toResponseJSON = toResponseBS "application/json" . encode
 
 projectHandler :: RouteT Sitemap (ServerPartT IO) Response
 projectHandler = ok . toResponseJSON $ testProject
-
-$(deriveJSON (stripTypeName "task") ''Task)
-$(deriveJSON (stripTypeName "proj") ''Project)

@@ -6,7 +6,7 @@ module Sparkle.Routes
     ) where
 
 import Prelude hiding ((.), id)
-import Control.Category ((.), id)
+import Control.Category ((.), {-id-})
 import Text.Boomerang.TH (derivePrinterParsers)
 import Web.Routes.Boomerang
 

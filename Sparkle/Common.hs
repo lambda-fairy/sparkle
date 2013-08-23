@@ -9,6 +9,7 @@ module Sparkle.Common
     , module Data.Text
     , module Data.Tree
     , module Data.Tree.Lens
+    , concatMapM
     , stripTypeName
     ) where
 
@@ -23,6 +24,9 @@ import Data.Monoid
 import Data.Text (Text)
 import Data.Tree
 import Data.Tree.Lens
+
+concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
+concatMapM a b = liftM concat $ mapM a b
 
 stripTypeName :: String -> String -> String
 stripTypeName prefix field = headToLower field'

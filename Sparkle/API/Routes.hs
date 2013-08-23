@@ -3,7 +3,7 @@
 module Sparkle.API.Routes where
 
 import Prelude hiding ((.), id)
-import Control.Category ((.), id)
+import Control.Category ((.), {-id-})
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as L
 import Text.Boomerang.TH (derivePrinterParsers)

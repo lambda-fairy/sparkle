@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable, FlexibleContexts, OverloadedStrings, TemplateHaskell, TypeFamilies #-}
 
 module Sparkle.Types
     (
@@ -21,6 +21,10 @@ module Sparkle.Types
     , DeleteTask(..)
     , QueryProject(..)
 
+      -- * Utilities
+    , queryP
+    , updateP
+
       -- * Debugging
     , testProject
     , printTasks
@@ -29,8 +33,8 @@ module Sparkle.Types
 
     ) where
 
-import Control.Monad.Reader (ask)
-import Data.Acid (Query, Update, makeAcidic)
+import Data.Acid
+import Data.Acid.Advanced (query', update')
 import Data.Aeson hiding ((.=))
 import Data.Aeson.TH
 import Data.Data (Data, Typeable)
@@ -153,6 +157,27 @@ queryProject :: Query Project Project
 queryProject = ask
 
 $(makeAcidic ''Project ['insertTask, 'modifyTask, 'deleteTask, 'queryProject])
+
+
+-- Helper functions ----------------------------------------------------
+
+queryP
+    :: (QueryEvent event, EventState event ~ Project,
+        MonadIO m, MonadReader (AcidState Project) m)
+    => event
+    -> m (EventResult event)
+queryP event = do
+    acid <- ask
+    query' acid event
+
+updateP
+    :: (UpdateEvent event, EventState event ~ Project,
+        MonadIO m, MonadReader (AcidState Project) m)
+    => event
+    -> m (EventResult event)
+updateP event = do
+    acid <- ask
+    update' acid event
 
 
 -- JSON serialization --------------------------------------------------

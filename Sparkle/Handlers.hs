@@ -2,6 +2,7 @@
 
 module Sparkle.Handlers where
 
+import Data.Acid (AcidState)
 import qualified Data.Text as T
 import Happstack.Server (ServerPartT, Response, toResponse, ok)
 import Web.Routes (RouteT)
@@ -12,13 +13,7 @@ import Sparkle.Routes
 import Sparkle.Templates
 import Sparkle.Types
 
-homePage :: RouteT Sitemap (ServerPartT IO) Response
-homePage = ok . toResponse $
-    pageTemplate $ emptyProject
-        & projTitle .~ "Ducks!"
-        & projTasks .~ testTasks
+type SparkleM a = RouteT Sitemap (ReaderT (AcidState Project) (ServerPartT IO)) a
 
-helloPage :: Maybe Text -> RouteT Sitemap (ServerPartT IO) Response
-helloPage name = ok . toResponse $ T.concat ["Hello, ", name', "!"]
-  where
-    name' = fromMaybe "stranger" name
+homePage :: SparkleM Response
+homePage = ok . toResponse =<< pageTemplate <$> queryP QueryProject

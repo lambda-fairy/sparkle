@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving, OverloadedStrings, RecordWildCards, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, TemplateHaskell, TypeFamilies #-}
 
 module Sparkle.Types
     (

@@ -3,7 +3,6 @@
 module Sparkle.Handlers where
 
 import Data.Acid (AcidState)
-import qualified Data.Text as T
 import Happstack.Server (ServerPartT, Response, toResponse, ok)
 import Web.Routes (RouteT)
 import Web.Routes.Happstack ()

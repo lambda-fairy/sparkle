@@ -45,8 +45,8 @@ Executable sparkle
         blaze-html,
         blaze-markup,
 
-        -- Newer versions require network >= 2.4
-        hslogger < 1.2.2,
+        -- Version 1.2.2 doesn't compile on network < 2.4
+        hslogger >= 1.2.3,
 
         -- Newer versions require stm >= 2.4
         acid-state == 0.8.*,

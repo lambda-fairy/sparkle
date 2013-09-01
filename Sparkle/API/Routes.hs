@@ -1,11 +1,13 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell, TypeOperators #-}
+{-# LANGUAGE RankNTypes, OverloadedStrings, TemplateHaskell, TypeOperators #-}
 
 module Sparkle.API.Routes where
 
 import Prelude hiding ((.), id)
 import Control.Category ((.), {-id-})
-import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as L
+import Data.List.NonEmpty (NonEmpty((:|)))
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Read as Text
 import Text.Boomerang.TH (derivePrinterParsers)
 import Web.Routes.Boomerang
 
@@ -18,7 +20,26 @@ $(derivePrinterParsers ''Sitemap)
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
-    <> rTasks . ("tasks" </> rNonEmpty (integer . eos))
+    <> rTasks . ("tasks" </> rNonEmptySep rInteger "-")
 
-rNonEmpty :: PrinterParser e tok r (a :- r) -> PrinterParser e tok r (NonEmpty a :- r)
-rNonEmpty r = xmaph L.fromList (Just . L.toList) (rList1 r)
+rNonEmptySep
+    :: (forall r'. PrinterParser e tok r' (a :- r'))
+    -> (forall r'. PrinterParser e tok r' r')
+    -> PrinterParser e tok r (NonEmpty a :- r)
+rNonEmptySep r sep = rNonEmpty . r . rList (sep . r)
+
+rNonEmpty :: PrinterParser e tok (a :- [a] :- r) (NonEmpty a :- r)
+rNonEmpty
+    = xpure (\(x :- (xs :- r)) -> (x :| xs) :- r)
+            (\((x :| xs) :- r) -> Just (x :- (xs :- r)))
+
+-- | A non-broken version of 'integer'.
+rInteger :: PrinterParser TextsError [Text] r (Integer :- r)
+rInteger = xmaph
+    (\s -> case Text.decimal s of
+                Left e -> error $ "rInteger: " ++ e
+                Right (x, s')
+                  | Text.null s' -> x
+                  | otherwise -> error "rInteger: ambiguous parse")
+    (Just . Text.pack . show)
+    (rText1 digit)

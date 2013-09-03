@@ -16,10 +16,11 @@ module Sparkle.Types
     , taskDone
 
       -- * Actions
+    , QueryProject(..)
+    , QueryTask(..)
     , InsertTask(..)
     , ModifyTask(..)
     , DeleteTask(..)
-    , QueryProject(..)
 
       -- * Utilities
     , queryP
@@ -89,12 +90,22 @@ withTasks' f = do
     projTasks .= tasks'
     return a
 
+elemAt :: Int -> [a] -> Maybe a
+elemAt i = listToMaybe . drop i
+
 insertAt :: Int -> a -> [a] -> [a]
 insertAt i a xs = before ++ a : after
   where (before, after) = splitAt i xs
 
 
 -- Pure functions ------------------------------------------------------
+
+queryTask' :: Pos -> Tasks -> Maybe Task
+queryTask' is_ (Tasks forest_) = go is_ forest_
+  where
+    go is forest = case L.uncons is of
+        (i, Nothing)  -> elemAt i forest >>= \(Node x _      ) -> return x
+        (i, Just is') -> elemAt i forest >>= \(Node _ forest') -> go is' forest'
 
 insertTask'
     :: Pos   -- ^ Position at which to insert the task
@@ -143,6 +154,12 @@ deleteTask' is_ (Tasks forest_) = over _2 Tasks $ go is_ forest_
 
 -- Acidic functions ----------------------------------------------------
 
+queryProject :: Query Project Project
+queryProject = ask
+
+queryTask :: Pos -> Query Project (Maybe Task)
+queryTask pos = queryTask' pos <$> view projTasks
+
 insertTask :: Pos -> Task -> Update Project ()
 insertTask pos x = withTasks (insertTask' pos x)
 
@@ -152,11 +169,7 @@ modifyTask pos x = withTasks (modifyTask' pos x)
 deleteTask :: Pos -> Update Project (Maybe Task)
 deleteTask pos = withTasks' (deleteTask' pos)
 
--- | Retrieve the current project.
-queryProject :: Query Project Project
-queryProject = ask
-
-$(makeAcidic ''Project ['insertTask, 'modifyTask, 'deleteTask, 'queryProject])
+$(makeAcidic ''Project ['queryProject, 'queryTask, 'insertTask, 'modifyTask, 'deleteTask])
 
 
 -- Helper functions ----------------------------------------------------

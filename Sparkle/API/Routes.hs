@@ -13,14 +13,14 @@ import Web.Routes.Boomerang
 
 data Sitemap
     = Project
-    | Tasks (NonEmpty Integer)
+    | Tasks (NonEmpty Int)
     deriving (Eq, Read, Show)
 $(derivePrinterParsers ''Sitemap)
 
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
-    <> rTasks . ("tasks" </> rNonEmptySep rInteger "-")
+    <> rTasks . ("tasks" </> rNonEmptySep rInt "-")
 
 rNonEmptySep
     :: (forall r'. PrinterParser e tok r' (a :- r'))
@@ -34,12 +34,12 @@ rNonEmpty
             (\((x :| xs) :- r) -> Just (x :- (xs :- r)))
 
 -- | A non-broken version of 'integer'.
-rInteger :: PrinterParser TextsError [Text] r (Integer :- r)
-rInteger = xmaph
+rInt :: PrinterParser TextsError [Text] r (Int :- r)
+rInt = xmaph
     (\s -> case Text.decimal s of
-                Left e -> error $ "rInteger: " ++ e
+                Left e -> error $ "rInt: " ++ e
                 Right (x, s')
                   | Text.null s' -> x
-                  | otherwise -> error "rInteger: ambiguous parse")
+                  | otherwise -> error "rInt: ambiguous parse")
     (Just . Text.pack . show)
     (rText1 digit)

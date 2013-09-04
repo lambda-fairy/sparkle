@@ -5,16 +5,18 @@ module Sparkle.API.Routes where
 import Prelude hiding ((.), id)
 import Control.Category ((.), {-id-})
 import Data.List.NonEmpty (NonEmpty((:|)))
-import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
 import Text.Boomerang.TH (derivePrinterParsers)
-import Web.Routes.Boomerang
+import Web.Routes.Boomerang hiding ((<>), Pos)
+
+import Sparkle.Common
+import Sparkle.Types
 
 data Sitemap
     = Project
-    | Tasks (NonEmpty Int)
-    | TasksNew (NonEmpty Int)
+    | Tasks Pos
+    | TasksNew Pos
     deriving (Eq, Read, Show)
 $(derivePrinterParsers ''Sitemap)
 

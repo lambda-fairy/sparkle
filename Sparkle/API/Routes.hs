@@ -14,12 +14,14 @@ import Web.Routes.Boomerang
 data Sitemap
     = Project
     | Tasks (NonEmpty Int)
+    | TasksNew (NonEmpty Int)
     deriving (Eq, Read, Show)
 $(derivePrinterParsers ''Sitemap)
 
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
+    <> rTasksNew . ("tasks" </> rNonEmptySep rInt "-" </> "new")
     <> rTasks . ("tasks" </> rNonEmptySep rInt "-")
 
 rNonEmptySep

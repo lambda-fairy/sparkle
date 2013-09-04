@@ -15,11 +15,13 @@ module Sparkle.Types
     , taskTitle
     , taskDone
 
+    , Pos
+
       -- * Actions
     , QueryProject(..)
     , QueryTask(..)
     , InsertTask(..)
-    , ModifyTask(..)
+    , ReplaceTask(..)
     , DeleteTask(..)
 
       -- * Utilities
@@ -119,11 +121,11 @@ insertTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
             (before, node:after) -> before ++ [over branches (go is') node] ++ after
             _ -> forest ++ [Node x []]
 
-modifyTask'
+replaceTask'
     :: Pos   -- ^ The position of the task
     -> Task  -- ^ The new task object
     -> Tasks -> Tasks
-modifyTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
+replaceTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> case splitAt i forest of
@@ -163,13 +165,13 @@ queryTask pos = queryTask' pos <$> view projTasks
 insertTask :: Pos -> Task -> Update Project ()
 insertTask pos x = withTasks (insertTask' pos x)
 
-modifyTask :: Pos -> Task -> Update Project ()
-modifyTask pos x = withTasks (modifyTask' pos x)
+replaceTask :: Pos -> Task -> Update Project ()
+replaceTask pos x = withTasks (replaceTask' pos x)
 
 deleteTask :: Pos -> Update Project (Maybe Task)
 deleteTask pos = withTasks' (deleteTask' pos)
 
-$(makeAcidic ''Project ['queryProject, 'queryTask, 'insertTask, 'modifyTask, 'deleteTask])
+$(makeAcidic ''Project ['queryProject, 'queryTask, 'insertTask, 'replaceTask, 'deleteTask])
 
 
 -- Helper functions ----------------------------------------------------

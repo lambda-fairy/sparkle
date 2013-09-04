@@ -21,8 +21,8 @@ $(derivePrinterParsers ''Sitemap)
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
-    <> rTasksNew . ("tasks" </> rNonEmptySep rInt "-" </> "new")
-    <> rTasks . ("tasks" </> rNonEmptySep rInt "-")
+    <> rTasksNew . ("tasks" </> rNonEmptySep rInt eos </> "new")
+    <> rTasks . ("tasks" </> rNonEmptySep rInt eos)
 
 rNonEmptySep
     :: (forall r'. PrinterParser e tok r' (a :- r'))

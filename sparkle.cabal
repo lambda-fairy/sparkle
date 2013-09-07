@@ -52,7 +52,8 @@ Executable sparkle
         acid-state == 0.8.*,
         safecopy,
 
-        boomerang,
+        -- See <http://stackoverflow.com/q/18424469/617159>
+        boomerang >= 1.3.4,
         web-routes,
         web-routes-happstack,
         web-routes-boomerang

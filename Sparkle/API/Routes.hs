@@ -23,8 +23,8 @@ $(derivePrinterParsers ''Sitemap)
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
-    <> rTasksNew . ("tasks" </> rNonEmptySep rInt eos </> "new")
-    <> rTasks . ("tasks" </> rNonEmptySep rInt eos)
+    <> rTasksNew . ("tasks" </> rNonEmptySep int eos </> "new")
+    <> rTasks . ("tasks" </> rNonEmptySep int eos)
 
 rNonEmptySep
     :: (forall r'. PrinterParser e tok r' (a :- r'))
@@ -36,14 +36,3 @@ rNonEmpty :: PrinterParser e tok (a :- [a] :- r) (NonEmpty a :- r)
 rNonEmpty
     = xpure (\(x :- (xs :- r)) -> (x :| xs) :- r)
             (\((x :| xs) :- r) -> Just (x :- (xs :- r)))
-
--- | A non-broken version of 'integer'.
-rInt :: PrinterParser TextsError [Text] r (Int :- r)
-rInt = xmaph
-    (\s -> case Text.decimal s of
-                Left e -> error $ "rInt: " ++ e
-                Right (x, s')
-                  | Text.null s' -> x
-                  | otherwise -> error "rInt: ambiguous parse")
-    (Just . Text.pack . show)
-    (rText1 digit)

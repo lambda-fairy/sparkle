@@ -5,9 +5,7 @@ module Sparkle.API.Routes where
 import Prelude hiding ((.), id)
 import Control.Category ((.), {-id-})
 import Data.List.NonEmpty (NonEmpty((:|)))
-import qualified Data.Text as Text
-import qualified Data.Text.Read as Text
-import Text.Boomerang.TH (derivePrinterParsers)
+import Text.Boomerang.TH (makeBoomerangs)
 import Web.Routes.Boomerang hiding ((<>), Pos)
 
 import Sparkle.Common
@@ -18,7 +16,7 @@ data Sitemap
     | Tasks Pos
     | TasksNew Pos
     deriving (Eq, Read, Show)
-$(derivePrinterParsers ''Sitemap)
+$(makeBoomerangs ''Sitemap)
 
 sitemap :: Router () (Sitemap :- ())
 sitemap
@@ -27,12 +25,12 @@ sitemap
     <> rTasks . ("tasks" </> rNonEmptySep int eos)
 
 rNonEmptySep
-    :: (forall r'. PrinterParser e tok r' (a :- r'))
-    -> (forall r'. PrinterParser e tok r' r')
-    -> PrinterParser e tok r (NonEmpty a :- r)
+    :: (forall r'. Boomerang e tok r' (a :- r'))
+    -> (forall r'. Boomerang e tok r' r')
+    -> Boomerang e tok r (NonEmpty a :- r)
 rNonEmptySep r sep = rNonEmpty . r . rList (sep . r)
 
-rNonEmpty :: PrinterParser e tok (a :- [a] :- r) (NonEmpty a :- r)
+rNonEmpty :: Boomerang e tok (a :- [a] :- r) (NonEmpty a :- r)
 rNonEmpty
     = xpure (\(x :- (xs :- r)) -> (x :| xs) :- r)
             (\((x :| xs) :- r) -> Just (x :- (xs :- r)))

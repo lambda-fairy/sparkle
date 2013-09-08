@@ -19,6 +19,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Trans
 import Control.Lens hiding (levels)
+import qualified Data.Aeson.TH as A
 import Data.Char (toLower)
 import Data.List
 import Data.Maybe
@@ -30,11 +31,13 @@ import Data.Tree.Lens
 concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
 concatMapM a b = liftM concat $ mapM a b
 
-stripTypeName :: String -> String -> String
-stripTypeName prefix field = headToLower field'
+stripTypeName :: String -> A.Options
+stripTypeName prefix = A.defaultOptions{ A.fieldLabelModifier = processField }
   where
-    field' = fromMaybe (error $ "field name " ++ field ++ " must be prefixed by " ++ prefix')
-                       (stripPrefix prefix' field)
+    processField
+        = headToLower
+        . fromMaybe (error $ "field name must be prefixed by " ++ prefix')
+        . stripPrefix prefix'
     prefix' = '_' : prefix
 
 headToLower :: String -> String

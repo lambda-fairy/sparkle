@@ -7,14 +7,14 @@ module Sparkle.Routes
 
 import Prelude hiding ((.), id)
 import Control.Category ((.), {-id-})
-import Text.Boomerang.TH (derivePrinterParsers)
+import Text.Boomerang.TH (makeBoomerangs)
 import Web.Routes.Boomerang
 
 import qualified Sparkle.API.Routes as API
 
 data Sitemap = Home | API API.Sitemap
     deriving (Eq, Read, Show)
-$(derivePrinterParsers ''Sitemap)
+$(makeBoomerangs ''Sitemap)
 
 sitemap :: Router () (Sitemap :- ())
 sitemap

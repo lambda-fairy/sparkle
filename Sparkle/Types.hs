@@ -72,7 +72,7 @@ data Task = Task
     } deriving (Show, Data, Typeable)
 
 -- | A position in the task tree, represented as a list of indices.
-type Pos = NonEmpty Int
+type Pos = NonEmpty Integer
 
 $(concatMapM makeLenses [''Task, ''Project])
 $(concatMapM (deriveSafeCopy 0 'base) [''Task, ''Tasks, ''Project])
@@ -92,12 +92,12 @@ withTasks' f = do
     projTasks .= tasks'
     return a
 
-elemAt :: Int -> [a] -> Maybe a
-elemAt i = listToMaybe . drop i
+elemAt :: Integral i => i -> [a] -> Maybe a
+elemAt i = listToMaybe . genericDrop i
 
-insertAt :: Int -> a -> [a] -> [a]
+insertAt :: Integral i => i -> a -> [a] -> [a]
 insertAt i a xs = before ++ a : after
-  where (before, after) = splitAt i xs
+  where (before, after) = genericSplitAt i xs
 
 
 -- Pure functions ------------------------------------------------------
@@ -117,7 +117,7 @@ insertTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> insertAt i (Node x []) forest
-        (i, Just is') -> case splitAt i forest of
+        (i, Just is') -> case genericSplitAt i forest of
             (before, node:after) -> before ++ [over branches (go is') node] ++ after
             _ -> forest ++ [Node x []]
 
@@ -128,10 +128,10 @@ replaceTask'
 replaceTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
-        (i, Nothing) -> case splitAt i forest of
+        (i, Nothing) -> case genericSplitAt i forest of
             (before, node:after) -> before ++ [set root x node] ++ after
             _ -> fallback forest
-        (i, Just is') -> case splitAt i forest of
+        (i, Just is') -> case genericSplitAt i forest of
             (before, node:after) -> before ++ [over branches (go is') node] ++ after
             _ -> fallback forest
     -- If the task tree has changed in the mean time, add the task to
@@ -144,10 +144,10 @@ deleteTask'
 deleteTask' is_ (Tasks forest_) = over _2 Tasks $ go is_ forest_
   where
     go is forest = case L.uncons is of
-        (i, Nothing) -> case splitAt i forest of
+        (i, Nothing) -> case genericSplitAt i forest of
             (before, (Node task cs):after) -> (Just task, before ++ cs ++ after)
             _ -> (Nothing, forest)
-        (i, Just is') -> case splitAt i forest of
+        (i, Just is') -> case genericSplitAt i forest of
             (before, node:after) ->
                 let (deleted, children') = go is' (view branches node)
                 in  (deleted, before ++ [set branches children' node] ++ after)

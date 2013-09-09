@@ -21,8 +21,11 @@ $(makeBoomerangs ''Sitemap)
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
-    <> rTasksNew . ("tasks" </> rNonEmptySep int eos </> "new")
-    <> rTasks . ("tasks" </> rNonEmptySep int eos)
+    <> rTasksNew . ("tasks" </> rPos </> "new")
+    <> rTasks . ("tasks" </> rPos)
+
+rPos :: Router r (Pos :- r)
+rPos = rNonEmptySep integer eos
 
 rNonEmptySep
     :: (forall r'. Boomerang e tok r' (a :- r'))

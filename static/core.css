@@ -1,9 +1,13 @@
 html {
-  font: 100%/150% Verdana, sans-serif;
+  font: 100%/175% Ubuntu, sans-serif;
 }
 
 #plan ul {
   list-style: none;
+  padding-left: 0;
+}
+
+#plan ul ul {
   padding-left: 1.25em;
 }
 
@@ -17,9 +21,10 @@ html {
   /* Use 0% opacity instead of "transparent" to avoid awkward gaps */
   border: 1px solid transparent;
   border-color: rgba(255, 255, 255, 0);
-  border-radius: 2px;
+  border-radius: 4px;
+  cursor: text;
 }
 
 #plan label:hover {
-  background-color: #fff0ff;
+  border-color: #ddd #cac #cac #ddd;
 }

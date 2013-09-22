@@ -61,6 +61,8 @@ site acid = setDefault Home $ boomerangSiteRouteT route' sitemap
     route' = mapRouteT (flip runReaderT acid) . route
 
 route :: Sitemap -> SparkleM Response
-route url = case url of
+route url = fancyHeaders <$> case url of
     Home -> homePage
     API url' -> nestURL API $ API.route url'
+  where
+    fancyHeaders = setHeader "X-UA-Compatible" "IE=edge"

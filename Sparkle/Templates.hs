@@ -22,9 +22,11 @@ outerTemplate title body = H.docTypeHtml $ do
         H.meta ! A.charset "utf-8"
         H.title $ toHtml title
         H.link ! A.rel "stylesheet" ! A.href "/static/core.css"
+        H.script ! A.src "/static/jquery-2.0.3.min.js" $ mempty
+        H.script ! A.src "/static/core.js" $ mempty
     H.body $ do
         H.h1 $ toHtml title
-        H.div ! A.id "content" $ body
+        body
         H.footer $ do
             H.p $ do
                 "Powered by "
@@ -32,19 +34,19 @@ outerTemplate title body = H.docTypeHtml $ do
 
 
 planTemplate :: Tasks -> Html
-planTemplate = (H.section ! A.id "plan") . dumpChildren . getTasks
+planTemplate = (H.section ! A.id "plan" ! A.class_ "plan") . dumpChildren . getTasks
   where
     dumpChildren tasks = H.ul $
         forM_ tasks $ \(Node t cs) ->
             H.li ! onlyIf (notNull cs)
                           (A.class_ "task-has-children") $ do
                 -- Task title
-                H.label $ do
-                    H.input ! A.type_ "checkbox"
-                            ! A.disabled "disabled"
-                            ! onlyIf (t^.taskDone) (A.checked "checked")
-                    "\xA0" -- no-break space
-                    H.span $ toHtml (t^.taskTitle)
+                H.table ! A.class_ "task" $ H.tr $ do
+                    H.td ! A.class_ "task-done" $
+                        H.input ! A.type_ "checkbox"
+                                ! A.disabled "disabled"
+                                ! onlyIf (t^.taskDone) (A.checked "checked")
+                    H.td ! A.class_ "task-title" $ toHtml (t^.taskTitle)
 
                 -- Recurse in child tasks
                 when (notNull cs) $

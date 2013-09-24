@@ -2,29 +2,43 @@ html {
   font: 100%/175% Ubuntu, sans-serif;
 }
 
-#plan ul {
+.plan ul {
   list-style: none;
   padding-left: 0;
 }
 
-#plan ul ul {
+.plan ul ul {
   padding-left: 1.25em;
 }
 
-#plan li.task-has-children {
+.plan li.task-has-children {
   margin-top: 0.5em;
 }
 
-#plan label {
-  display: block;
-  padding-left: 0.25em;
+.plan .task {
+  width: 100%;
+  border-spacing: 0;
   /* Use 0% opacity instead of "transparent" to avoid awkward gaps */
   border: 1px solid transparent;
   border-color: rgba(255, 255, 255, 0);
-  border-radius: 4px;
-  cursor: text;
 }
 
-#plan label:hover {
+.plan .task-done {
+  width: 1.5em;
+  text-align: center;
+}
+
+.plan.editable .task:hover {
   border-color: #ddd #cac #cac #ddd;
+  border-radius: 4px;
+}
+
+.plan.not-editable {
+  cursor: default;
+  color: #999;
+}
+
+.plan.editable .task-title {
+  /* Give the whole cell that cursor, not just the text inside */
+  cursor: text;
 }

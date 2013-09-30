@@ -3,17 +3,21 @@
 
 module Sparkle.Templates where
 
-import Text.Blaze ((!))
+import Text.Blaze ((!), dataAttribute, toValue)
 import Text.Blaze.Html5 (Html, toHtml)
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Data.Text as Text
 
 import Sparkle.Common
 import Sparkle.Types
 
 
 pageTemplate :: Project -> Html
-pageTemplate = outerTemplate <$> view projTitle <*> planTemplate . view projTasks
+pageTemplate proj = outerTemplate (proj^.projTitle) content
+  where
+    content = H.section ! A.id "plan" ! A.class_ "plan" $
+                planTemplate (proj^.projTasks)
 
 
 outerTemplate :: Text -> Html -> Html
@@ -34,12 +38,16 @@ outerTemplate title body = H.docTypeHtml $ do
 
 
 planTemplate :: Tasks -> Html
-planTemplate = (H.section ! A.id "plan" ! A.class_ "plan") . dumpChildren . getTasks
+planTemplate = dumpChildren [] . getTasks
   where
-    dumpChildren tasks = H.ul $
-        forM_ tasks $ \(Node t cs) ->
+
+    dumpChildren :: [Integer] -> Forest Task -> Html
+    dumpChildren path tasks = H.ul $
+        forM_ (zip [0..] tasks) $ \(i, (Node t cs)) -> do
+            let path' = i : path
             H.li ! onlyIf (notNull cs)
-                          (A.class_ "task-has-children") $ do
+                          (A.class_ "task-has-children")
+                 ! dataAttribute "id" (toValue (renderPath path')) $ do
                 -- Task title
                 H.table ! A.class_ "task" $ H.tr $ do
                     H.td ! A.class_ "task-done" $
@@ -50,7 +58,10 @@ planTemplate = (H.section ! A.id "plan" ! A.class_ "plan") . dumpChildren . getT
 
                 -- Recurse in child tasks
                 when (notNull cs) $
-                    dumpChildren cs
+                    dumpChildren path' cs
+
+    renderPath :: [Integer] -> Text
+    renderPath = Text.intercalate "/" . map (Text.pack . show) . reverse
 
 
 -- | @onlyif b x@ returns @x@ /only if/ @b@ is True.

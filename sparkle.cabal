@@ -50,6 +50,7 @@ Executable sparkle
 
         -- Newer versions require stm >= 2.4
         acid-state == 0.8.*,
+        cereal == 0.3.*,
         safecopy,
 
         -- See <http://stackoverflow.com/q/18424469/617159>

@@ -32,21 +32,21 @@ html {
   border-radius: 4px;
 }
 
-.plan.editable .task-title {
+.plan.idle .task-title {
   /* Give the whole cell that cursor, not just the text inside */
   cursor: text;
 }
 
-.plan.editable .task-title:hover {
+.plan.idle .task-title:hover {
   border-color: #ccc;
 }
 
-.plan.editable .task-title:active,
-.plan.editable .task-title[contenteditable="true"] {
+.plan.idle .task-title:active,
+.plan.idle .task-title[contenteditable="true"] {
   border-color: #333;
 }
 
-.plan.not-editable {
+.plan.locked {
   cursor: default;
   color: #999;
 }

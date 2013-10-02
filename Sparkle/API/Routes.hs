@@ -14,6 +14,7 @@ import Sparkle.Types
 data Sitemap
     = Project
     | Tasks Pos
+    | TasksData Pos
     | TasksNew Pos
     deriving (Eq, Read, Show)
 $(makeBoomerangs ''Sitemap)
@@ -21,6 +22,7 @@ $(makeBoomerangs ''Sitemap)
 sitemap :: Router () (Sitemap :- ())
 sitemap
     =  rProject . "project"
+    <> rTasksData . ("tasks" </> rPos </> "data")
     <> rTasksNew . ("tasks" </> rPos </> "new")
     <> rTasks . ("tasks" </> rPos)
 

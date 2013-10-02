@@ -21,16 +21,19 @@ projectHandler :: ApiM Response
 projectHandler = ok . render =<< queryP QueryProject
 
 tasksHandler :: Pos -> ApiM Response
-tasksHandler is = msum
+tasksHandler _ = error "not implemented"
+
+tasksDataHandler :: Pos -> ApiM Response
+tasksDataHandler is = msum
     [ method GET >> doGet
-    , method PUT >> doPut
+    , method POST >> doPost
     , method DELETE >> doDelete
     ]
   where
     doGet = queryP (QueryTask is) >>= \r -> case r of
         Nothing -> notFound $ reply "task cannot be found"
         Just task -> ok $ render task
-    doPut = withJSONBody $ \task -> do
+    doPost = withJSONBody $ \task -> do
         updateP (ReplaceTask is task)
         noContent $ reply "task changed"
     doDelete = do

@@ -45,16 +45,20 @@ planTemplate = dumpChildren [] . getTasks
     dumpChildren path tasks = H.ul $
         forM_ (zip [0..] tasks) $ \(i, (Node t cs)) -> do
             let path' = i : path
-            H.li ! onlyIf (notNull cs)
-                          (A.class_ "task-has-children")
+            let hasChildrenClass
+                  | notNull cs = " task-has-children"
+                  | otherwise = mempty
+            H.li ! A.class_ ("task" <> hasChildrenClass)
                  ! dataAttribute "id" (toValue (renderPath path')) $ do
                 -- Task title
-                H.table ! A.class_ "task" $ H.tr $ do
+                H.table ! A.class_ "task-data" $ H.tr $ do
                     H.td ! A.class_ "task-done" $
                         H.input ! A.type_ "checkbox"
                                 ! A.disabled "disabled"
                                 ! onlyIf (t^.taskDone) (A.checked "checked")
-                    H.td ! A.class_ "task-title" $ toHtml (t^.taskTitle)
+                    H.td ! A.class_ "task-title"
+                         ! A.tabindex "-1" $
+                        toHtml (t^.taskTitle)
 
                 -- Recurse in child tasks
                 when (notNull cs) $

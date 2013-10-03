@@ -11,11 +11,11 @@ html {
   padding-left: 1.25em;
 }
 
-.plan li.task-has-children {
+.plan .task.task-has-children {
   margin-top: 0.5em;
 }
 
-.plan .task {
+.plan .task-data {
   width: 100%;
   border-spacing: 0;
 }
@@ -42,7 +42,7 @@ html {
 }
 
 .plan.idle .task-title:active,
-.plan.idle .task-title[contenteditable="true"] {
+.plan.editing .task-title[contenteditable="true"] {
   border-color: #333;
 }
 

@@ -86,9 +86,9 @@ var Sparkle = (function ($) { 'use strict';
 
     // Enable/disable all input fields
     if (this.state !== Locked)
-      this.$root.find('input').removeAttr('disabled')
+      this.$root.find('input').prop('disabled', false)
     else
-      this.$root.find('input').attr('disabled', true)
+      this.$root.find('input').prop('disabled', true)
 
     // Plan can't reload while user is editing a task
     if (this.state === Editing)

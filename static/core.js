@@ -17,82 +17,92 @@ var Sparkle = (function ($) { 'use strict';
 
   // The interface is a state machine that cycles through three states:
   // Locked, Idle, Editing.
+  var handlers = {
+    // Placeholder thingie.
+    undefined: {
+      off: function () {}
+    },
 
-  var Locked = 'locked'
-  // The plan is locked and cannot be edited.  This can happen when:
-  //   1. Sparkle is currently saving a modification
-  //   2. Client cannot connect to the server
+    // The plan is locked and cannot be edited.  This can happen when:
+    //   1. Sparkle is currently saving a modification
+    //   2. Client cannot connect to the server
+    locked: {
+      on: function () {
+        this.setEnabled(false)
+      },
+      off: function () {
+        this.setEnabled(true)
+      }
+    },
 
-  var Idle = 'idle'
-  // The default state.
+    // The default state.
+    idle: {
+      on: function () {
+        var thisObj = this
+        this.$root.on('focus.sparkle-idle', '.task-title', function () {
+          var $taskData = $(this).closest('.task-data')
+          thisObj.cursor = new TaskEditor($taskData)
+          thisObj.transition('editing')
+        })
+      },
+      off: function () {
+        this.$root.off('.sparkle-idle')
+      }
+    },
 
-  var Editing = 'editing'
-  // The user has made a modification to a task, but has not saved it.
-  // Client code must not update the plan in this state.
+    // The user has made a modification to a task, but has not saved it.
+    // Client code must not update the plan in this state.
+    editing: {
+      on: function () {
+        // Plan can't reload while user is editing a task
+        this.cancelReload()
 
-  var states = [Locked, Idle, Editing]
+        // When user clicks outside task, save changes
+        var thisObj = this
+        this.$root.on('blur.sparkle-editing', '.task-title', function () {
+          console.assert(thisObj.cursor, 'The task being edited cannot be null')
+          thisObj.transition('locked')
+        })
+      },
+      off: function () {
+        this.$root.off('.sparkle-editing')
+        var thisObj = this
+        this.cursor.finalize()
+          .done(function () { thisObj.reload(); delete thisObj.cursor })
+          .fail(function () { connectionLost() })
+      }
+    }
+  }
 
   function Sparkle(rootSelector) {
     this.$root = $(rootSelector)
     this.$root.fuzzyCheckboxes('.task-done')
 
-    // Wire up event handlers
-    this.cursor = null
-    var thisObj = this
-    this.$root
-      .on('focus', '.task-title', function () {
-        if (thisObj.state !== Idle)
-          return
-
-        var $taskData = $(this).closest('.task-data')
-        thisObj.cursor = new TaskEditor($taskData)
-        thisObj.state = Editing
-      })
-      .on('blur', '.task-title', function () {
-        if (thisObj.state !== Editing)
-          return
-        console.assert(thisObj.cursor, 'The task being edited cannot be null')
-
-        thisObj.state = Locked
-        thisObj.cursor.finalize()
-          .done(function () { thisObj.reload(); delete thisObj.cursor })
-          .fail(function () { connectionLost() })
-      })
-
     // Set initial state
-    var state = Locked
-    // Note: defineProperty only works in IE >= 9
-    Object.defineProperty(this, 'state', {
-      get: function () { return state },
-      set: function (state_) {
-        if (state_ !== state) {
-          console.log('Switching state to: %s', state_)
-          state = state_
-        }
-        this.applyState()
-      }
-    })
-    this.applyState()
+    this.transition('locked')
   }
 
-  // Ensure the interface matches up with the internal state.  This is
-  // called whenever the state changes, and after the plan successfully
-  // reloads.
-  Sparkle.prototype.applyState = function () {
+  Sparkle.prototype.setEnabled = function (hooray) {
+    this.$root.find('input').prop('disabled', !hooray)
+  }
+
+  // Transition from one state to another.
+  Sparkle.prototype.transition = function (newState) {
+    var oldState = this.state
+    if (newState !== oldState) {
+      console.log('Transitioning from %s -> %s', oldState, newState)
+      this.state = newState
+    }
+
     // Set CSS classes for styling
-    var sparkleRoot = this.$root
-    states.forEach(function (s) { sparkleRoot.removeClass(s) })
-    this.$root.addClass(this.state)
+    for (var s in handlers) if (handlers.hasOwnProperty(s)) {
+      this.$root.removeClass(s)
+    }
+    this.$root.addClass(newState)
 
-    // Enable/disable all input fields
-    if (this.state !== Locked)
-      this.$root.find('input').prop('disabled', false)
-    else
-      this.$root.find('input').prop('disabled', true)
-
-    // Plan can't reload while user is editing a task
-    if (this.state === Editing)
-      this.cancelReload()
+    // Invoke callbacks
+    handlers[oldState].off.call(this)
+    handlers[newState].on.call(this)
   }
 
   // Schedule a reload of the plan.
@@ -104,16 +114,18 @@ var Sparkle = (function ($) { 'use strict';
     var thisObj = this
     this._reloadDeferred = $.get('/', {plain: true}, function (data) {
       console.assert(
-        thisObj.state !== Editing,
+        thisObj.state !== 'editing',
         'The plan should never reload while the user is editing it')
       thisObj.$root.html(data)
-      thisObj.state = Idle
+      // The given HTML has everything disabled by default, so we need
+      // to re-enable it
+      thisObj.setEnabled(true)
+      thisObj.transition('idle')
       thisObj._reloadTimer = setTimeout(function () { thisObj.reload() }, 5000)
     }).fail(function (ajax) {
       if (ajax.statusText !== 'abort') {
         // This failed because of an actual error, not cancelReload()
-        thisObj.state = Locked
-        connectionLost()
+        thisObj.connectionLost()
       }
     })
   }
@@ -128,6 +140,11 @@ var Sparkle = (function ($) { 'use strict';
       clearTimeout(this._reloadTimer)
       delete this._reloadTimer
     }
+  }
+
+  Sparkle.prototype.connectionLost = function () {
+    this.transition('locked')
+    alert('Connection lost. Reload the page and try again.')
   }
 
   function TaskEditor($taskData) {
@@ -150,10 +167,6 @@ var Sparkle = (function ($) { 'use strict';
     // Send it awayways
     return $.post('/api/v0/tasks/'+this.id+'/data',
                   JSON.stringify({done: done_, title: title_}))
-  }
-
-  function connectionLost() {
-    alert('Connection lost. Reload the page and try again.')
   }
 
   return Sparkle

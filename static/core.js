@@ -60,8 +60,14 @@ var Sparkle = (function ($) { 'use strict';
 
     // When user clicks outside task, save changes
     var thisObj = this
-    this.u.onoff($taskData, 'blur', '.task-title', function () {
+    var $taskTitle = $taskData.find('.task-title')
+    this.u.onoff($taskTitle, 'blur', function () {
       thisObj.save()
+    }).onoff($taskTitle, 'keydown', function (e) {
+      if (e.which === 13 && !e.shiftKey) {
+        // <Return>
+        thisObj.save()
+      }
     })
   }
 

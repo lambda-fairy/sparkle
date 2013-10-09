@@ -27,6 +27,7 @@ outerTemplate title body = H.docTypeHtml $ do
         H.title $ toHtml title
         H.link ! A.rel "stylesheet" ! A.href "/static/core.css"
         H.script ! A.src "/static/jquery-2.0.3.min.js" $ mempty
+        H.script ! A.src "/static/undoer.js" $ mempty
         H.script ! A.src "/static/core.js" $ mempty
     H.body $ do
         H.h1 $ toHtml title

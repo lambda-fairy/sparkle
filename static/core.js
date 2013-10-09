@@ -15,94 +15,73 @@ jQuery.fn.extend({
 
 var Sparkle = (function ($) { 'use strict';
 
-  // The interface is a state machine that cycles through three states:
-  // Locked, Idle, Editing.
-  var handlers = {
-    // Placeholder thingie.
-    undefined: {
-      off: function () {}
-    },
-
-    // The plan is locked and cannot be edited.  This can happen when:
-    //   1. Sparkle is currently saving a modification
-    //   2. Client cannot connect to the server
-    locked: {
-      on: function () {
-        this.setEnabled(false)
-      },
-      off: function () {
-        this.setEnabled(true)
-      }
-    },
-
-    // The default state.
-    idle: {
-      on: function () {
-        var thisObj = this
-        this.$root.on('focus.sparkle-idle', '.task-title', function () {
-          var $taskData = $(this).closest('.task-data')
-          thisObj.cursor = new TaskEditor($taskData)
-          thisObj.transition('editing')
-        })
-      },
-      off: function () {
-        this.$root.off('.sparkle-idle')
-      }
-    },
-
-    // The user has made a modification to a task, but has not saved it.
-    // Client code must not update the plan in this state.
-    editing: {
-      on: function () {
-        // Plan can't reload while user is editing a task
-        this.cancelReload()
-
-        // When user clicks outside task, save changes
-        var thisObj = this
-        this.$root.on('blur.sparkle-editing', '.task-title', function () {
-          console.assert(thisObj.cursor, 'The task being edited cannot be null')
-          thisObj.transition('locked')
-        })
-      },
-      off: function () {
-        this.$root.off('.sparkle-editing')
-        var thisObj = this
-        this.cursor.finalize()
-          .done(function () { thisObj.reload(); delete thisObj.cursor })
-          .fail(function () { connectionLost() })
-      }
-    }
-  }
-
   function Sparkle(rootSelector) {
     this.$root = $(rootSelector)
     this.$root.fuzzyCheckboxes('.task-done')
 
-    // Set initial state
-    this.transition('locked')
+    this.u = new Undoer()
   }
 
-  Sparkle.prototype.setEnabled = function (hooray) {
-    this.$root.find('input').prop('disabled', !hooray)
-  }
-
-  // Transition from one state to another.
-  Sparkle.prototype.transition = function (newState) {
+  Sparkle.prototype._transition = function (newState) {
     var oldState = this.state
     if (newState !== oldState) {
       console.log('Transitioning from %s -> %s', oldState, newState)
       this.state = newState
     }
 
-    // Set CSS classes for styling
-    for (var s in handlers) if (handlers.hasOwnProperty(s)) {
-      this.$root.removeClass(s)
-    }
-    this.$root.addClass(newState)
+    // Roll back the previous state
+    this.u.run()
 
-    // Invoke callbacks
-    handlers[oldState].off.call(this)
-    handlers[newState].on.call(this)
+    // Set CSS classes for styling
+    this.$root.removeClass(oldState).addClass(newState)
+
+    // Enable/disable input fields
+    this.$root.find('input').prop('disabled', newState === 'locked')
+  }
+
+  Sparkle.prototype.switchIdle = function () {
+    this._transition('idle')
+
+    var thisObj = this
+    this.u.onoff(this.$root, 'focus', '.task-title', function () {
+      var $taskData = $(this).closest('.task-data')
+      thisObj.switchEditing($taskData)
+    })
+  }
+
+  Sparkle.prototype.switchEditing = function ($taskData) {
+    this._transition('editing')
+
+    // Plan can't reload while user is editing a task
+    this.cancelReload()
+
+    // Make a box thingy
+    this.cursor = new TaskEditor($taskData)
+
+    // When user clicks outside task, save changes
+    var thisObj = this
+    this.u.onoff($taskData, 'blur', '.task-title', function () {
+      thisObj.save()
+    })
+  }
+
+  Sparkle.prototype.save = function () {
+    console.assert(this.cursor, 'The task being edited cannot be null')
+
+    // The user shouldn't be able to make changes while it's saving
+    this.switchLocked()
+
+    // Send the request
+    var thisObj = this
+    return this.cursor.save().then(function () {
+      return thisObj.reload()
+    }).fail(function () {
+      thisObj.connectionLost()
+    })
+  }
+
+  Sparkle.prototype.switchLocked = function ($taskData) {
+    this._transition('locked')
   }
 
   // Schedule a reload of the plan.
@@ -117,10 +96,7 @@ var Sparkle = (function ($) { 'use strict';
         thisObj.state !== 'editing',
         'The plan should never reload while the user is editing it')
       thisObj.$root.html(data)
-      // The given HTML has everything disabled by default, so we need
-      // to re-enable it
-      thisObj.setEnabled(true)
-      thisObj.transition('idle')
+      thisObj.switchIdle()
       thisObj._reloadTimer = setTimeout(function () { thisObj.reload() }, 5000)
     }).fail(function (ajax) {
       if (ajax.statusText !== 'abort') {
@@ -128,6 +104,8 @@ var Sparkle = (function ($) { 'use strict';
         thisObj.connectionLost()
       }
     })
+
+    return this._reloadDeferred
   }
 
   // Cancel a reload in progress.
@@ -143,7 +121,7 @@ var Sparkle = (function ($) { 'use strict';
   }
 
   Sparkle.prototype.connectionLost = function () {
-    this.transition('locked')
+    this.switchLocked()
     alert('Connection lost. Reload the page and try again.')
   }
 
@@ -154,7 +132,7 @@ var Sparkle = (function ($) { 'use strict';
     $taskData.find('.task-title').attr('contenteditable', 'true')
   }
 
-  TaskEditor.prototype.finalize = function () {
+  TaskEditor.prototype.save = function () {
     console.log('Saving task <%s>', this.id)
 
     var done_ = this.$taskData.find('.task-done :checkbox').prop('checked')

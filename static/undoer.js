@@ -6,12 +6,14 @@ function Undoer() {
 
 Undoer.prototype.record = function (f) {
   this.actions.push(f)
+  return this
 }
 
 Undoer.prototype.run = function () {
   while (this.actions.length > 0) {
     this.actions.pop()()
   }
+  return this
 }
 
 Undoer.prototype.onoff = function (target) {
@@ -21,4 +23,5 @@ Undoer.prototype.onoff = function (target) {
   this.record(function () {
     target.off.apply(target, args)
   })
+  return this
 }

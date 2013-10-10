@@ -158,6 +158,6 @@ var Sparkle = (function ($) { 'use strict';
 })(jQuery)
 
 jQuery(function () {
-  var s = new Sparkle('#plan')
-  s.reload()
+  window.S = new Sparkle('#plan')
+  S.reload()
 })

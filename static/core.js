@@ -15,6 +15,19 @@ jQuery.fn.extend({
 
 var Sparkle = (function ($) { 'use strict';
 
+  var Server = {
+    getPlan: function () {
+      return $.get('/', {plain: true})
+    },
+    modifyTask: function (id, data) {
+      return $.post('/api/v0/tasks/'+id+'/data', JSON.stringify(data))
+    },
+    insertTask: function (id, data) {
+      data = data || {done: false, title: ''}
+      return $.post('/api/v0/tasks/'+id+'/new', JSON.stringify(data))
+    }
+  }
+
   function Sparkle(rootSelector) {
     this.$root = $(rootSelector)
     this.$root.fuzzyCheckboxes('.task-done')
@@ -62,11 +75,11 @@ var Sparkle = (function ($) { 'use strict';
     var thisObj = this
     var $taskTitle = $taskData.find('.task-title')
     this.u.onoff($taskTitle, 'blur', function () {
-      thisObj.save()
+      thisObj.saveReload()
     }).onoff($taskTitle, 'keydown', function (e) {
-      if (e.which === 13 && !e.shiftKey) {
-        // <Return>
-        thisObj.save()
+      if (e.which === 27) {
+        // <Esc>
+        thisObj.saveReload()
       }
     })
   }
@@ -79,11 +92,13 @@ var Sparkle = (function ($) { 'use strict';
 
     // Send the request
     var thisObj = this
-    return this.cursor.save().then(function () {
-      return thisObj.reload()
-    }).fail(function () {
+    return this.cursor.save().fail(function () {
       thisObj.connectionLost()
     })
+  }
+
+  Sparkle.prototype.saveReload = function () {
+    return this.save().then(this.reload.bind(this))
   }
 
   Sparkle.prototype.switchLocked = function ($taskData) {
@@ -97,7 +112,7 @@ var Sparkle = (function ($) { 'use strict';
     this.cancelReload()
 
     var thisObj = this
-    this._reloadDeferred = $.get('/', {plain: true}, function (data) {
+    this._reloadDeferred = Server.getPlan().done(function (data) {
       console.assert(
         thisObj.state !== 'editing',
         'The plan should never reload while the user is editing it')
@@ -149,8 +164,7 @@ var Sparkle = (function ($) { 'use strict';
     $taskTitle.removeAttr('contenteditable')
 
     // Send it awayways
-    return $.post('/api/v0/tasks/'+this.id+'/data',
-                  JSON.stringify({done: done_, title: title_}))
+    return Server.modifyTask(this.id, {done: done_, title: title_})
   }
 
   return Sparkle

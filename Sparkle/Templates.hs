@@ -49,17 +49,18 @@ planTemplate = dumpChildren [] . getTasks
             let hasChildrenClass
                   | notNull cs = " task-has-children"
                   | otherwise = mempty
-            H.li ! A.class_ ("task" <> hasChildrenClass)
-                 ! dataAttribute "id" (toValue (renderPath path')) $ do
+            H.li ! A.class_ ("task" <> hasChildrenClass) $ do
                 -- Task title
-                H.table ! A.class_ "task-data" $ H.tr $ do
-                    H.td ! A.class_ "task-done" $
-                        H.input ! A.type_ "checkbox"
-                                ! A.disabled "disabled"
-                                ! onlyIf (t^.taskDone) (A.checked "checked")
-                    H.td ! A.class_ "task-title"
-                         ! A.tabindex "-1" $
-                        toHtml (t^.taskTitle)
+                H.table ! A.class_ "task-data"
+                        ! dataAttribute "id" (toValue (renderPath path')) $
+                    H.tr $ do
+                        H.td ! A.class_ "task-done" $
+                            H.input ! A.type_ "checkbox"
+                                    ! A.disabled "disabled"
+                                    ! onlyIf (t^.taskDone) (A.checked "checked")
+                        H.td ! A.class_ "task-title"
+                             ! A.tabindex "-1" $
+                            toHtml (t^.taskTitle)
 
                 -- Recurse in child tasks
                 when (notNull cs) $

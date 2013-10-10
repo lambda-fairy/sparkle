@@ -147,7 +147,7 @@ var Sparkle = (function ($) { 'use strict';
   }
 
   function TaskEditor($taskData) {
-    this.id = $taskData.closest('.task').data('id')
+    this.id = $taskData.data('id')
     console.log('Editing task <%s>', this.id)
     this.$taskData = $taskData
     $taskData.find('.task-title').attr('contenteditable', 'true')

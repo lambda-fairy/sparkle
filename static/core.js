@@ -35,6 +35,12 @@ var Sparkle = (function ($) { 'use strict';
     this.u = new Undoer()
   }
 
+  Sparkle.prototype.getTaskDataById = function (id) {
+    return this.$root.find('.task-data').filter(function () {
+      return $(this).data('id') === id
+    })
+  }
+
   Sparkle.prototype._transition = function (newState) {
     var oldState = this.state
     if (newState !== oldState) {
@@ -70,6 +76,7 @@ var Sparkle = (function ($) { 'use strict';
 
     // Make a box thingy
     this.cursor = new TaskEditor($taskData)
+    $taskData.find('.task-title').focus()
 
     // When user clicks outside task, save changes
     var thisObj = this
@@ -80,6 +87,9 @@ var Sparkle = (function ($) { 'use strict';
       if (e.which === 27) {
         // <Esc>
         thisObj.saveReload()
+      } else if (e.which === 13 && !e.shiftKey) {
+        // <Return>
+        thisObj.save().then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
       }
     })
   }
@@ -99,6 +109,15 @@ var Sparkle = (function ($) { 'use strict';
 
   Sparkle.prototype.saveReload = function () {
     return this.save().then(this.reload.bind(this))
+  }
+
+  // Create a new task below the given ID, with the cursor on it.
+  Sparkle.prototype.openBelow = function (id) {
+    var thisObj = this
+    var newId = withTaskId(id, function (bits) { ++bits[bits.length-1] })
+    return Server.insertTask(newId).then(this.reload.bind(this)).done(function () {
+      thisObj.switchEditing(thisObj.getTaskDataById(newId))
+    })
   }
 
   Sparkle.prototype.switchLocked = function ($taskData) {
@@ -165,6 +184,15 @@ var Sparkle = (function ($) { 'use strict';
 
     // Send it awayways
     return Server.modifyTask(this.id, {done: done_, title: title_})
+  }
+
+  function withTaskId(id, callback) {
+    var bits = id.split('/').map(parseIntDecimal)
+    return (callback(bits) || bits).join('/')
+  }
+
+  function parseIntDecimal(s) {
+    return parseInt(s, 10)
   }
 
   return Sparkle

@@ -2,6 +2,9 @@
 console.assert = console.assert || function () {}
 
 jQuery.fn.extend({
+  dataString: function () {
+    return this.data.apply(this, arguments).toString()
+  },
   fuzzyCheckboxes: function (selector) {
     this.on('click', selector, function () {
       $(this).find(':checkbox').click()
@@ -37,7 +40,7 @@ var Sparkle = (function ($) { 'use strict';
 
   Sparkle.prototype.getTaskDataById = function (id) {
     return this.$root.find('.task-data').filter(function () {
-      return $(this).data('id') === id
+      return $(this).dataString('id') === id
     })
   }
 
@@ -166,7 +169,7 @@ var Sparkle = (function ($) { 'use strict';
   }
 
   function TaskEditor($taskData) {
-    this.id = $taskData.data('id')
+    this.id = $taskData.dataString('id')
     console.log('Editing task <%s>', this.id)
     this.$taskData = $taskData
     $taskData.find('.task-title').attr('contenteditable', 'true')

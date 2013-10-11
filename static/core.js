@@ -68,6 +68,10 @@ var Sparkle = (function ($) { 'use strict';
     this.u.onoff(this.$root, 'focus', '.task-title', function () {
       var $taskData = $(this).closest('.task-data')
       thisObj.switchEditing($taskData)
+    }).onoff(this.$root, 'change', '.task-done :checkbox', function () {
+      console.log('checkbox')
+      var $taskData = $(this).closest('.task-data')
+      thisObj.saveTaskReload(new Task($taskData))
     })
   }
 
@@ -78,40 +82,40 @@ var Sparkle = (function ($) { 'use strict';
     this.cancelReload()
 
     // Make a box thingy
-    this.cursor = new TaskEditor($taskData)
-    $taskData.find('.task-title').focus()
+    this.cursor = new Task($taskData)
+    this.cursor.edit()
 
     // When user clicks outside task, save changes
     var thisObj = this
     var $taskTitle = $taskData.find('.task-title')
     this.u.onoff($taskTitle, 'blur', function () {
-      thisObj.saveReload()
+      thisObj.saveTaskReload(thisObj.cursor)
     }).onoff($taskTitle, 'keydown', function (e) {
       if (e.which === 27) {
         // <Esc>
-        thisObj.saveReload()
+        thisObj.saveTaskReload(thisObj.cursor)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        thisObj.save().then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
+        thisObj.saveTask(this.cursor).then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
       }
     })
   }
 
-  Sparkle.prototype.save = function () {
-    console.assert(this.cursor, 'The task being edited cannot be null')
+  Sparkle.prototype.saveTask = function (task) {
+    console.assert(task, 'The task being edited cannot be null')
 
     // The user shouldn't be able to make changes while it's saving
     this.switchLocked()
 
     // Send the request
     var thisObj = this
-    return this.cursor.save().fail(function () {
+    return task.save().fail(function () {
       thisObj.connectionLost()
     })
   }
 
-  Sparkle.prototype.saveReload = function () {
-    return this.save().then(this.reload.bind(this))
+  Sparkle.prototype.saveTaskReload = function (task) {
+    return this.saveTask(task).then(this.reload.bind(this))
   }
 
   // Create a new task below the given ID, with the cursor on it.
@@ -168,14 +172,17 @@ var Sparkle = (function ($) { 'use strict';
     alert('Connection lost. Reload the page and try again.')
   }
 
-  function TaskEditor($taskData) {
+  function Task($taskData) {
     this.id = $taskData.dataString('id')
-    console.log('Editing task <%s>', this.id)
     this.$taskData = $taskData
-    $taskData.find('.task-title').attr('contenteditable', 'true')
   }
 
-  TaskEditor.prototype.save = function () {
+  Task.prototype.edit = function () {
+    console.log('Editing task <%s>', this.id)
+    this.$taskData.find('.task-title').attr('contenteditable', 'true').focus()
+  }
+
+  Task.prototype.save = function () {
     console.log('Saving task <%s>', this.id)
 
     var done_ = this.$taskData.find('.task-done :checkbox').prop('checked')

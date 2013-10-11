@@ -30,8 +30,24 @@ html {
 
 .plan .task-done {
   width: 1.5em;
-  text-align: center;
-  vertical-align: baseline;
+}
+
+.plan .task-done [type=checkbox] {
+  display: none;
+}
+
+.plan .task-done [type=checkbox] + span {
+  display: block;
+  width: 1em;
+  height: 1em;
+  background: white;
+  border: 1px solid #111;
+  border-radius: 2px;
+}
+
+.plan .task-done [type=checkbox]:checked + span {
+  border-color: white;
+  background: white url(/static/tick.svg) no-repeat;
 }
 
 .plan .task-title {
@@ -59,5 +75,5 @@ html {
 
 .plan.locked {
   cursor: default;
-  color: #777;
+  opacity: 0.5;
 }

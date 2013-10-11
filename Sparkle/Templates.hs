@@ -54,10 +54,11 @@ planTemplate = dumpChildren [] . getTasks
                 H.table ! A.class_ "task-data"
                         ! dataAttribute "id" (toValue (renderPath path')) $
                     H.tr $ do
-                        H.td ! A.class_ "task-done" $
+                        H.td ! A.class_ "task-done" $ do
                             H.input ! A.type_ "checkbox"
                                     ! A.disabled "disabled"
                                     ! onlyIf (t^.taskDone) (A.checked "checked")
+                            H.span $ mempty  -- for styling the checkbox
                         H.td ! A.class_ "task-title"
                              ! A.tabindex "-1" $
                             toHtml (t^.taskTitle)

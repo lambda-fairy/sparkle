@@ -36,7 +36,6 @@ Executable sparkle
         vector,
 
         lens,
-        semigroups,
 
         happstack-server == 7.3.*,
 
@@ -60,7 +59,6 @@ Executable sparkle
         web-routes-boomerang >= 0.28.0
 
     Other-Modules:
-        Data.List.NonEmpty.SafeCopy
         Sparkle
         Sparkle.API
         Sparkle.API.Routes

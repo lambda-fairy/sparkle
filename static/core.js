@@ -2,9 +2,6 @@
 console.assert = console.assert || function () {}
 
 jQuery.fn.extend({
-  dataString: function () {
-    return this.data.apply(this, arguments).toString()
-  },
   fuzzyCheckboxes: function (selector) {
     this.on('click', selector, function () {
       $(this).find(':checkbox').click()
@@ -27,12 +24,12 @@ var Sparkle = (function ($) { 'use strict';
       return $.post('/api/v0/tasks/'+id+'/new', JSON.stringify(data))
     },
     modifyTask: function (id, data) {
-      return $.post('/api/v0/tasks/'+id+'/data', JSON.stringify(data))
+      return $.post('/api/v0/tasks/'+id, JSON.stringify(data))
     },
     deleteTask: function (id) {
       return $.ajax({
         type: 'DELETE',
-        url: '/api/v0/tasks/'+id+'/data'
+        url: '/api/v0/tasks/'+id
       })
     }
   }
@@ -44,9 +41,9 @@ var Sparkle = (function ($) { 'use strict';
     this.u = new Undoer()
   }
 
-  Sparkle.prototype.getTaskDataById = function (id) {
-    return this.$root.find('.task-data').filter(function () {
-      return $(this).dataString('id') === id
+  Sparkle.prototype.getTaskById = function (id) {
+    return this.$root.find('.task').filter(function () {
+      return $(this).data('id') == id
     })
   }
 
@@ -72,28 +69,27 @@ var Sparkle = (function ($) { 'use strict';
 
     var thisObj = this
     this.u.onoff(this.$root, 'focus', '.task-title', function () {
-      var $taskData = $(this).closest('.task-data')
-      thisObj.switchEditing($taskData)
+      var $task = $(this).closest('.task')
+      thisObj.switchEditing($task)
     }).onoff(this.$root, 'change', '.task-done :checkbox', function () {
-      console.log('checkbox')
-      var $taskData = $(this).closest('.task-data')
-      thisObj.saveTask(new Task($taskData))
+      var $task = $(this).closest('.task')
+      thisObj.saveTask(new Task($task))
     })
   }
 
-  Sparkle.prototype.switchEditing = function ($taskData) {
+  Sparkle.prototype.switchEditing = function ($task) {
     this._transition('editing')
 
     // Plan can't reload while user is editing a task
     this.cancelReload()
 
     // Make a box thingy
-    this.cursor = new Task($taskData)
+    this.cursor = new Task($task)
     this.cursor.edit()
 
     // When user clicks outside task, save changes
     var thisObj = this
-    var $taskTitle = $taskData.find('.task-title')
+    var $taskTitle = $task.find('.task-title')
     this.u.onoff($taskTitle, 'blur', function () {
       thisObj.saveTask(thisObj.cursor)
     }).onoff($taskTitle, 'keydown', function (e) {
@@ -107,7 +103,7 @@ var Sparkle = (function ($) { 'use strict';
         thisObj.saveTask(thisObj.cursor)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        thisObj.saveTask_(thisObj.cursor).then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
+        thisObj.saveTask_(thisObj.cursor).then(thisObj.newTask.bind(thisObj, 1 + thisObj.cursor.id))
       }
     })
   }
@@ -134,16 +130,14 @@ var Sparkle = (function ($) { 'use strict';
     return this.saveTask_(task).then(this.reload.bind(this))
   }
 
-  // Create a new task below the given ID, with the cursor on it.
-  Sparkle.prototype.openBelow = function (id) {
+  Sparkle.prototype.newTask = function (newId) {
     var thisObj = this
-    var newId = withTaskId(id, function (bits) { ++bits[bits.length-1] })
     return Server.insertTask(newId).then(this.reload.bind(this)).done(function () {
-      thisObj.switchEditing(thisObj.getTaskDataById(newId))
+      thisObj.switchEditing(thisObj.getTaskById(newId))
     })
   }
 
-  Sparkle.prototype.switchLocked = function ($taskData) {
+  Sparkle.prototype.switchLocked = function () {
     this._transition('locked')
   }
 
@@ -188,14 +182,14 @@ var Sparkle = (function ($) { 'use strict';
     alert('Connection lost. Reload the page and try again.')
   }
 
-  function Task($taskData) {
-    this.id = $taskData.dataString('id')
-    this.$taskData = $taskData
+  function Task($task) {
+    this.id = $task.data('id')
+    this.$task = $task
   }
 
   Task.prototype.edit = function () {
     console.log('Editing task <%s>', this.id)
-    this.$taskData.find('.task-title').attr('contenteditable', 'true').focus()
+    this.$task.find('.task-title').attr('contenteditable', 'true').focus()
   }
 
   Task.prototype.delete_ = function () {
@@ -206,8 +200,8 @@ var Sparkle = (function ($) { 'use strict';
   Task.prototype.save = function () {
     console.log('Saving task <%s>', this.id)
 
-    var done_ = this.$taskData.find('.task-done :checkbox').prop('checked')
-    var $taskTitle = this.$taskData.find('.task-title')
+    var done_ = this.$task.find('.task-done :checkbox').prop('checked')
+    var $taskTitle = this.$task.find('.task-title')
     var title_ = $taskTitle.text()
 
     // Make task read-only again
@@ -215,15 +209,6 @@ var Sparkle = (function ($) { 'use strict';
 
     // Send it awayways
     return Server.modifyTask(this.id, {done: done_, title: title_})
-  }
-
-  function withTaskId(id, callback) {
-    var bits = id.split('/').map(parseIntDecimal)
-    return (callback(bits) || bits).join('/')
-  }
-
-  function parseIntDecimal(s) {
-    return parseInt(s, 10)
   }
 
   return Sparkle

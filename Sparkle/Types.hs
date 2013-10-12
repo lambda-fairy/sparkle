@@ -11,7 +11,7 @@ module Sparkle.Types
     , emptyProject
 
     , Task(..)
-    , Tasks(..)
+    , Tasks
     , taskTitle
     , taskDone
 
@@ -38,13 +38,8 @@ module Sparkle.Types
 
 import Data.Acid
 import Data.Acid.Advanced (query', update')
-import Data.Aeson hiding ((.=))
 import Data.Aeson.TH
 import Data.Data (Data, Typeable)
-import qualified Data.HashMap.Strict as H
-import Data.List.NonEmpty (NonEmpty)
-import Data.List.NonEmpty.SafeCopy ()
-import qualified Data.List.NonEmpty as L
 import Data.SafeCopy (base, deriveSafeCopy)
 import qualified Data.Text as T
 
@@ -62,8 +57,7 @@ data Project = Project
     } deriving (Show, Data, Typeable)
 
 -- | The set of tasks in the project.
-newtype Tasks = Tasks { getTasks :: Forest Task }
-    deriving (Show, Data, Typeable)
+type Tasks = [Task]
 
 -- | A single task.
 data Task = Task
@@ -71,14 +65,14 @@ data Task = Task
     , _taskDone  :: Bool
     } deriving (Show, Data, Typeable)
 
--- | A position in the task tree, represented as a list of indices.
-type Pos = NonEmpty Integer
+-- | A position in the task tree, represented as a non-negative index.
+type Pos = Integer
 
 $(concatMapM makeLenses [''Task, ''Project])
-$(concatMapM (deriveSafeCopy 0 'base) [''Task, ''Tasks, ''Project])
+$(concatMapM (deriveSafeCopy 0 'base) [''Task, ''Project])
 
 emptyProject :: Project
-emptyProject = Project "Untitled Project" (Tasks []) 0
+emptyProject = Project "Untitled Project" [] 0
 
 
 withTasks :: (Tasks -> Tasks) -> Update Project ()
@@ -92,64 +86,33 @@ withTasks' f = do
     projTasks .= tasks'
     return a
 
-elemAt :: Integral i => i -> [a] -> Maybe a
-elemAt i = listToMaybe . genericDrop i
-
-insertAt :: Integral i => i -> a -> [a] -> [a]
-insertAt i a xs = before ++ a : after
-  where (before, after) = genericSplitAt i xs
-
 
 -- Pure functions ------------------------------------------------------
 
 queryTask' :: Pos -> Tasks -> Maybe Task
-queryTask' is_ (Tasks forest_) = go is_ forest_
-  where
-    go is forest = case L.uncons is of
-        (i, Nothing)  -> elemAt i forest >>= \(Node x _      ) -> return x
-        (i, Just is') -> elemAt i forest >>= \(Node _ forest') -> go is' forest'
+queryTask' i = listToMaybe . genericDrop i
 
 insertTask'
     :: Pos   -- ^ Position at which to insert the task
     -> Task  -- ^ The new task object
     -> Tasks -> Tasks
-insertTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
-  where
-    go is forest = case L.uncons is of
-        (i, Nothing) -> insertAt i (Node x []) forest
-        (i, Just is') -> case genericSplitAt i forest of
-            (before, node:after) -> before ++ [over branches (go is') node] ++ after
-            _ -> forest ++ [Node x []]
+insertTask' i a ts = case genericSplitAt i ts of
+    (before, after) -> before ++ a : after
 
 replaceTask'
     :: Pos   -- ^ The position of the task
     -> Task  -- ^ The new task object
     -> Tasks -> Tasks
-replaceTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
-  where
-    go is forest = case L.uncons is of
-        (i, Nothing) -> case genericSplitAt i forest of
-            (before, node:after) -> before ++ [set root x node] ++ after
-            _ -> fallback forest
-        (i, Just is') -> case genericSplitAt i forest of
-            (before, node:after) -> before ++ [over branches (go is') node] ++ after
-            _ -> fallback forest
-    -- If the task tree has changed in the mean time, add the task to
-    -- the end of the branch
-    fallback = (++ [Node x []])
+replaceTask' i a ts = case genericSplitAt i ts of
+    (before, _:after) -> before ++ a : after
+    _ -> ts ++ [a]
 
 deleteTask'
     :: Pos  -- ^ Task to delete
     -> Tasks -> Tasks
-deleteTask' is_ (Tasks forest_) = Tasks (go is_ forest_)
-  where
-    go is forest = case L.uncons is of
-        (i, Nothing) -> case genericSplitAt i forest of
-            (before, (Node _ cs):after) -> before ++ cs ++ after
-            _ -> forest
-        (i, Just is') -> case genericSplitAt i forest of
-            (before, node:after) -> before ++ [over branches (go is') node] ++ after
-            _ -> forest
+deleteTask' i ts = case genericSplitAt i ts of
+    (before, _:after) -> before ++ after
+    _ -> ts
 
 
 -- Acidic functions ----------------------------------------------------
@@ -195,23 +158,6 @@ updateP event = do
 
 -- JSON serialization --------------------------------------------------
 
-instance FromJSON Tasks where
-    parseJSON = (Tasks <$>) . parseForest
-      where
-        parseForest = mapM parseTree <=< parseJSON
-        parseTree
-            = withObject "tree node" $ \v -> do
-                data_     <- v .: "data"
-                children_ <- v .: "children"
-                Node data_ <$> parseForest children_
-
-instance ToJSON Tasks where
-    toJSON = renderForest . getTasks
-      where
-        renderForest = toJSON . map renderTree
-        renderTree (Node data_ children_)
-            = Object $ H.fromList [("data", toJSON data_), ("children", renderForest children_)]
-
 $(deriveJSON (stripTypeName "task") ''Task)
 $(deriveJSON (stripTypeName "proj") ''Project)
 
@@ -224,18 +170,16 @@ testProject = emptyProject
     & projTasks .~ testTasks
 
 printTasks :: Tasks -> IO ()
-printTasks = putStrLn . drawForest . map (fmap show) . getTasks
+printTasks = mapM_ print
 
 testTasks :: Tasks
-testTasks = Tasks
-    [ Node (Task ">\")_" True)
-        [ Node (Task "Duck" False)   []
-        , Node (Task "Duck" True)    []
-        , Node (Task "Goose!" False) []
-        ]
-    , Node (Task "\x2192 also utf-8 is c\x014D\x014Dl \x2190" False)
-        [ Node (Task "<script>alert('Look at me! I fail at XSS!')</script>" False) []
-        ]
+testTasks =
+    [ Task ">\")_" True
+    , Task "Giant enemy crab" False
+    , Task "Attack its weak point\nfor massive damage" True
+    , Task "(actually took place in feudal Japan)" False
+    , Task "\x2192 also utf-8 is c\x014D\x014Dl \x2190" False
+    , Task "<script>alert('Look at me! I fail at XSS!')</script>" False
     ]
 
 testTask :: Task

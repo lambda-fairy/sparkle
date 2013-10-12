@@ -7,8 +7,6 @@ module Sparkle.Common
     , module Data.List
     , module Data.Maybe
     , module Data.Monoid
-    , module Data.Tree
-    , module Data.Tree.Lens
     , Text
     , concatMapM
     , stripTypeName
@@ -25,8 +23,6 @@ import Data.List
 import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
-import Data.Tree
-import Data.Tree.Lens
 
 concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
 concatMapM a b = liftM concat $ mapM a b

@@ -95,7 +95,7 @@ var Sparkle = (function ($) { 'use strict';
     }).onoff($taskTitle, 'keydown', function (e) {
       if (e.which === 8 || e.which === 46) {
         // <Backspace> or <Del>
-        if ($taskTitle.text().match(/^\s*$/) !== null) {
+        if (stringIsSpace($taskTitle.text())) {
           thisObj.deleteTask(thisObj.cursor)
         }
       } else if (e.which === 27) {
@@ -103,9 +103,29 @@ var Sparkle = (function ($) { 'use strict';
         thisObj.saveTask(thisObj.cursor)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        thisObj.saveTask_(thisObj.cursor).then(thisObj.newTask.bind(thisObj, 1 + thisObj.cursor.id))
+        var sel = document.getSelection()
+        var offset = sel.rangeCount === 1 && isCursorAtEnd($taskTitle, sel.getRangeAt(0)) ? 1 : 0
+        thisObj.saveTask_(thisObj.cursor).then(thisObj.newTask.bind(thisObj, offset + thisObj.cursor.id))
       }
     })
+  }
+
+  function stringIsSpace(s) {
+    return s.match(/^\s*$/) !== null
+  }
+
+  function isCursorAtEnd($parent, r) {
+    if (stringIsSpace($parent.text()))
+      return true
+
+    if (!r.collapsed)
+      return false
+
+    var node = r.commonAncestorContainer
+    console.log($parent.get(0).lastChild)
+    return $parent.get(0).lastChild === node &&
+      node.nodeType === document.TEXT_NODE &&
+      r.startOffset === node.nodeValue.length
   }
 
   Sparkle.prototype.deleteTask = function (task) {

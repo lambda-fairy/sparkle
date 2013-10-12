@@ -22,12 +22,18 @@ var Sparkle = (function ($) { 'use strict';
     getPlan: function () {
       return $.get('/', {plain: true})
     },
-    modifyTask: function (id, data) {
-      return $.post('/api/v0/tasks/'+id+'/data', JSON.stringify(data))
-    },
     insertTask: function (id, data) {
       data = data || {done: false, title: ''}
       return $.post('/api/v0/tasks/'+id+'/new', JSON.stringify(data))
+    },
+    modifyTask: function (id, data) {
+      return $.post('/api/v0/tasks/'+id+'/data', JSON.stringify(data))
+    },
+    deleteTask: function (id) {
+      return $.ajax({
+        type: 'DELETE',
+        url: '/api/v0/tasks/'+id+'/data'
+      })
     }
   }
 
@@ -71,7 +77,7 @@ var Sparkle = (function ($) { 'use strict';
     }).onoff(this.$root, 'change', '.task-done :checkbox', function () {
       console.log('checkbox')
       var $taskData = $(this).closest('.task-data')
-      thisObj.saveTaskReload(new Task($taskData))
+      thisObj.saveTask(new Task($taskData))
     })
   }
 
@@ -89,19 +95,29 @@ var Sparkle = (function ($) { 'use strict';
     var thisObj = this
     var $taskTitle = $taskData.find('.task-title')
     this.u.onoff($taskTitle, 'blur', function () {
-      thisObj.saveTaskReload(thisObj.cursor)
+      thisObj.saveTask(thisObj.cursor)
     }).onoff($taskTitle, 'keydown', function (e) {
-      if (e.which === 27) {
+      if (e.which === 8 || e.which === 46) {
+        // <Backspace> or <Del>
+        if ($taskTitle.text().match(/^\s*$/) !== null) {
+          thisObj.deleteTask(thisObj.cursor)
+        }
+      } else if (e.which === 27) {
         // <Esc>
-        thisObj.saveTaskReload(thisObj.cursor)
+        thisObj.saveTask(thisObj.cursor)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        thisObj.saveTask(this.cursor).then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
+        thisObj.saveTask_(thisObj.cursor).then(thisObj.openBelow.bind(thisObj, thisObj.cursor.id))
       }
     })
   }
 
-  Sparkle.prototype.saveTask = function (task) {
+  Sparkle.prototype.deleteTask = function (task) {
+    this.switchLocked()
+    return task.delete_().then(this.reload.bind(this))
+  }
+
+  Sparkle.prototype.saveTask_ = function (task) {
     console.assert(task, 'The task being edited cannot be null')
 
     // The user shouldn't be able to make changes while it's saving
@@ -114,8 +130,8 @@ var Sparkle = (function ($) { 'use strict';
     })
   }
 
-  Sparkle.prototype.saveTaskReload = function (task) {
-    return this.saveTask(task).then(this.reload.bind(this))
+  Sparkle.prototype.saveTask = function (task) {
+    return this.saveTask_(task).then(this.reload.bind(this))
   }
 
   // Create a new task below the given ID, with the cursor on it.
@@ -180,6 +196,11 @@ var Sparkle = (function ($) { 'use strict';
   Task.prototype.edit = function () {
     console.log('Editing task <%s>', this.id)
     this.$taskData.find('.task-title').attr('contenteditable', 'true').focus()
+  }
+
+  Task.prototype.delete_ = function () {
+    console.log('Deleting task <%s>', this.id)
+    return Server.deleteTask(this.id)
   }
 
   Task.prototype.save = function () {

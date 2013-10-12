@@ -140,18 +140,16 @@ replaceTask' is_ x (Tasks forest_) = Tasks (go is_ forest_)
 
 deleteTask'
     :: Pos  -- ^ Task to delete
-    -> Tasks -> (Maybe Task, Tasks)
-deleteTask' is_ (Tasks forest_) = over _2 Tasks $ go is_ forest_
+    -> Tasks -> Tasks
+deleteTask' is_ (Tasks forest_) = Tasks (go is_ forest_)
   where
     go is forest = case L.uncons is of
         (i, Nothing) -> case genericSplitAt i forest of
-            (before, (Node task cs):after) -> (Just task, before ++ cs ++ after)
-            _ -> (Nothing, forest)
+            (before, (Node _ cs):after) -> before ++ cs ++ after
+            _ -> forest
         (i, Just is') -> case genericSplitAt i forest of
-            (before, node:after) ->
-                let (deleted, children') = go is' (view branches node)
-                in  (deleted, before ++ [set branches children' node] ++ after)
-            _ -> (Nothing, forest)
+            (before, node:after) -> before ++ [over branches (go is') node] ++ after
+            _ -> forest
 
 
 -- Acidic functions ----------------------------------------------------
@@ -168,8 +166,8 @@ insertTask pos x = withTasks (insertTask' pos x)
 replaceTask :: Pos -> Task -> Update Project ()
 replaceTask pos x = withTasks (replaceTask' pos x)
 
-deleteTask :: Pos -> Update Project (Maybe Task)
-deleteTask pos = withTasks' (deleteTask' pos)
+deleteTask :: Pos -> Update Project ()
+deleteTask pos = withTasks (deleteTask' pos)
 
 $(makeAcidic ''Project ['queryProject, 'queryTask, 'insertTask, 'replaceTask, 'deleteTask])
 

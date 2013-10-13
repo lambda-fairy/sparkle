@@ -2,6 +2,9 @@
 console.assert = console.assert || function () {}
 
 jQuery.fn.extend({
+  isBlank: function () {
+    return /^\s*$/.test(this.text())
+  },
   fuzzyCheckboxes: function (selector) {
     this.on('click', selector, function () {
       $(this).find(':checkbox').click()
@@ -20,7 +23,7 @@ var Sparkle = (function ($) { 'use strict';
       return $.get('/', {plain: true})
     },
     insertTask: function (id, data) {
-      data = data || {done: false, title: ''}
+      data = data || emptyTask
       return $.post('/api/v0/tasks/'+id+'/new', JSON.stringify(data))
     },
     modifyTask: function (id, data) {
@@ -34,6 +37,8 @@ var Sparkle = (function ($) { 'use strict';
     }
   }
 
+  var emptyTask = {done: false, title: ''}
+
   function Sparkle(rootSelector) {
     this.$root = $(rootSelector)
     this.$root.fuzzyCheckboxes('.task-done')
@@ -41,8 +46,12 @@ var Sparkle = (function ($) { 'use strict';
     this.u = new Undoer()
   }
 
+  Sparkle.prototype.allTasks = function () {
+    return this.$root.find('.task')
+  }
+
   Sparkle.prototype.getTaskById = function (id) {
-    return this.$root.find('.task').filter(function () {
+    return this.allTasks().filter(function () {
       return $(this).data('id') == id
     })
   }
@@ -84,45 +93,104 @@ var Sparkle = (function ($) { 'use strict';
     this.cancelReload()
 
     // Make a box thingy
-    this.cursor = new Task($task)
-    this.cursor.edit()
+    this.task = new Task($task)
+    this.task.edit()
 
-    // When user clicks outside task, save changes
     var thisObj = this
-    var $taskTitle = $task.find('.task-title')
-    this.u.onoff($taskTitle, 'blur', function () {
-      thisObj.saveTask(thisObj.cursor)
-    }).onoff($taskTitle, 'keydown', function (e) {
-      if (e.which === 8 || e.which === 46) {
-        // <Backspace> or <Del>
-        if (stringIsSpace($taskTitle.text())) {
-          thisObj.deleteTask(thisObj.cursor)
+    this.u.onoff($task, 'blur', '.task-title', function () {
+      // When user clicks outside task, save changes
+      thisObj.saveTask(thisObj.task)
+    }).onoff($task, 'keydown', '.task-title', function (e) {
+      var task = thisObj.task
+      var sel = document.getSelection()
+      var cursor = sel.rangeCount === 1 && sel.getRangeAt(0)
+      var cursorAtStart = isCursorAtStart(task.$title, cursor)
+      var cursorAtEnd = isCursorAtEnd(task.$title, cursor)
+
+      if (e.which === 8) {
+        // <Backspace>
+        if (task.id > 0 && cursorAtStart) {
+          // If cursor at beginning of line, merge contents with
+          // previous task
+          thisObj.deleteTask(task).then(function () {
+            var $prev = thisObj.getTaskById(task.id - 1)
+            var prevTask = thisObj.switchEditing($prev)
+
+            // Make sure the cursor is in the right place
+            var newPos = (function () {
+              var r = document.createRange()
+              r.selectNodeContents(prevTask.$title.get(0))
+              r.collapse(false)
+              return r
+            })()
+            sel.removeAllRanges(); sel.addRange(newPos)
+
+            // Merge
+            prevTask.$title.append(task.$title.html())
+          })
+        }
+      } else if (e.which === 46) {
+        // <Del>
+        if (task.id < thisObj.allTasks().length - 1 && cursorAtEnd) {
+          // If cursor at end of line, merge contents with next task
+          thisObj.deleteTask(task).then(function () {
+            var $next = thisObj.getTaskById(task.id)
+            var nextTask = thisObj.switchEditing($next)
+            nextTask.$title.prepend(task.$title.html())
+          })
         }
       } else if (e.which === 27) {
         // <Esc>
-        thisObj.saveTask(thisObj.cursor)
+        thisObj.saveTask(task)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        var sel = document.getSelection()
-        var offset = sel.rangeCount === 1 && isCursorAtEnd($taskTitle, sel.getRangeAt(0)) ? 1 : 0
-        thisObj.saveTask_(thisObj.cursor).then(thisObj.newTask.bind(thisObj, offset + thisObj.cursor.id))
+        var newData
+        var offset
+        if (cursorAtStart || !cursor || !cursor.collapsed) {
+          // If cursor at beginning of line, create a new blank task
+          // before the current one.
+          newData = null
+          offset = 0
+        } else {
+          // Else, split the current task at the cursor.  Place the
+          // latter half into a new task after the current one.
+          var remainder = (function () {
+            var r = document.createRange()
+            r.selectNodeContents(task.$title.get(0))
+            r.setStart(cursor.startContainer, cursor.startOffset)
+            return r.extractContents().textContent
+          })()
+          newData = emptyTask; newData['title'] = remainder
+          offset = 1
+        }
+        thisObj.saveTask_(task).then(thisObj.newTask.bind(thisObj, offset + task.id, newData))
       }
     })
+
+    return this.task
   }
 
-  function stringIsSpace(s) {
-    return s.match(/^\s*$/) !== null
+  function isCursorAtStart($parent, r) {
+    if ($parent.isBlank())
+      return true
+
+    if (!r || !r.collapsed)
+      return false
+
+    var node = r.commonAncestorContainer
+    return $parent.get(0).firstChild === node &&
+      node.nodeType === document.TEXT_NODE &&
+      r.startOffset === 0
   }
 
   function isCursorAtEnd($parent, r) {
-    if (stringIsSpace($parent.text()))
+    if ($parent.isBlank())
       return true
 
     if (!r.collapsed)
       return false
 
     var node = r.commonAncestorContainer
-    console.log($parent.get(0).lastChild)
     return $parent.get(0).lastChild === node &&
       node.nodeType === document.TEXT_NODE &&
       r.startOffset === node.nodeValue.length
@@ -150,9 +218,9 @@ var Sparkle = (function ($) { 'use strict';
     return this.saveTask_(task).then(this.reload.bind(this))
   }
 
-  Sparkle.prototype.newTask = function (newId) {
+  Sparkle.prototype.newTask = function (newId, newData) {
     var thisObj = this
-    return Server.insertTask(newId).then(this.reload.bind(this)).done(function () {
+    return Server.insertTask(newId, newData).then(this.reload.bind(this)).done(function () {
       thisObj.switchEditing(thisObj.getTaskById(newId))
     })
   }
@@ -205,11 +273,13 @@ var Sparkle = (function ($) { 'use strict';
   function Task($task) {
     this.id = $task.data('id')
     this.$task = $task
+    this.$done = $task.find('.task-done')
+    this.$title = $task.find('.task-title')
   }
 
   Task.prototype.edit = function () {
     console.log('Editing task <%s>', this.id)
-    this.$task.find('.task-title').attr('contenteditable', 'true').focus()
+    this.$title.attr('contenteditable', 'true').focus()
   }
 
   Task.prototype.delete_ = function () {
@@ -220,12 +290,11 @@ var Sparkle = (function ($) { 'use strict';
   Task.prototype.save = function () {
     console.log('Saving task <%s>', this.id)
 
-    var done_ = this.$task.find('.task-done :checkbox').prop('checked')
-    var $taskTitle = this.$task.find('.task-title')
-    var title_ = $taskTitle.text()
+    var done_ = this.$done.find(':checkbox').prop('checked')
+    var title_ = this.$title.text()
 
     // Make task read-only again
-    $taskTitle.removeAttr('contenteditable')
+    this.$title.removeAttr('contenteditable')
 
     // Send it awayways
     return Server.modifyTask(this.id, {done: done_, title: title_})

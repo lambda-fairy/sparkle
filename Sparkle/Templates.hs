@@ -40,7 +40,7 @@ outerTemplate title body = H.docTypeHtml $ do
 planTemplate :: Tasks -> Html
 planTemplate tasks = H.ul $
     forM_ (zip [0 :: Integer ..] tasks) $ \(i, t) -> do
-        H.li ! A.class_ "task"
+        H.li ! A.class_ ("task" <> onlyIf (t^.taskDone) " task-completed")
              ! dataAttribute "id" (toValue (show i)) $
             H.table . H.tr $ do
                 H.td ! A.class_ "task-done" $ do

@@ -22,6 +22,10 @@ body {
   border-spacing: 0;
 }
 
+.plan .task-completed .task-title {
+  text-decoration: line-through;
+}
+
 .plan .task-done, .plan .task-title {
   vertical-align: top;
   padding: 0.4em 0;

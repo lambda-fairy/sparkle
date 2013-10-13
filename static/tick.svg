@@ -58,14 +58,12 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(0,-1036.362)">
+     id="layer1">
     <path
        style="color:#000000;fill:none;stroke:#111111;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        d="M 2,10 6,14 14,4"
-       id="path2987"
+       id="tick"
        inkscape:connector-curvature="0"
-       transform="translate(0,1036.362)"
        sodipodi:nodetypes="ccc" />
   </g>
 </svg>

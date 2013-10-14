@@ -8,14 +8,16 @@
 module Sparkle
     ( sparkle
     , sparkleDebug
+    , sparkleWith
     ) where
 
 import Control.Exception (bracket)
 import Data.Acid (AcidState)
 import Data.Acid.Local (openLocalState, createCheckpointAndClose)
 import Data.Acid.Memory (openMemoryState)
-import qualified Data.Text as T
 import Happstack.Server
+import Happstack.Server.Compression (compressedResponseFilter)
+import Network.Simple.TCP
 import Web.Routes (Site, mapRouteT, nestURL, setDefault)
 import Web.Routes.Boomerang (boomerangSiteRouteT)
 import Web.Routes.Happstack (implSite)
@@ -27,31 +29,34 @@ import qualified Sparkle.API as API
 import Sparkle.Types
 
 -- | Start the Sparkle server.
-sparkle
-    :: Text   -- ^ Host name, used for URL rendering (e.g. @"sparkle.example.com"@)
-    -> Int    -- ^ Port
-    -> IO ()
+sparkle :: HostPreference -> ServiceName -> IO ()
 sparkle sHost sPort
     = bracket (openLocalState emptyProject)
               (createCheckpointAndClose)
-              (\acid -> simpleHTTP conf (sparkleServer acid sHost sPort))
-  where
-    conf = nullConf { port = sPort }
+              (sparkleWith sHost sPort)
 
 -- | Start the Sparkle server in debug mode.
 --
 -- * No data will be written to disk.
 -- * The state is pre-loaded with a test project.
--- * The server binds to port 8000.
+-- * The server binds to localhost, port 8000.
 --
 sparkleDebug :: IO ()
 sparkleDebug = do
     acid <- openMemoryState testProject
-    simpleHTTP nullConf (sparkleServer acid "localhost" (port nullConf))
+    sparkleWith "localhost" "8000" acid
 
-sparkleServer :: AcidState Project -> Text -> Int -> ServerPart Response
-sparkleServer acid sHost sPort = mconcat
-    [ implSite ("http://" <> sHost <> ":" <> T.pack (show sPort) <> "/") "" (site acid)
+sparkleWith :: HostPreference -> ServiceName -> AcidState Project -> IO ()
+sparkleWith sHost sPort acid =
+    -- Bind our own socket rather than depending on Happstack
+    -- network-simple enables TCP_NODELAY by default, which reduces latency
+    -- TODO: do something with addr
+    listen sHost sPort $ \(sock, _addr) ->
+        simpleHTTPWithSocket sock nullConf (sparkleSP acid)
+
+sparkleSP :: AcidState Project -> ServerPart Response
+sparkleSP acid = compressedResponseFilter >> mconcat
+    [ implSite "/" "" (site acid)
     , dir "static" $ serveDirectory DisableBrowsing [] "static"
     ]
 

@@ -64,6 +64,7 @@ body {
 }
 
 .plan .task-title:focus {
+  box-shadow: inset 1px 1px 4px 0 #666;
   /* Disable distracting outline on Chrome */
   outline: none;
 }

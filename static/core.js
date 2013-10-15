@@ -70,7 +70,12 @@ var Sparkle = (function ($) { 'use strict';
     this.$root.removeClass(oldState).addClass(newState)
 
     // Enable/disable input fields
-    this.$root.find('input').prop('disabled', newState === 'locked')
+    var isLocked = newState === 'locked'
+    this.$root.find('input').prop('disabled', isLocked)
+    if (isLocked)
+      this.$root.find('.task-title').removeAttr('tabindex')
+    else
+      this.$root.find('.task-title').attr('tabindex', -1)
   }
 
   Sparkle.prototype.switchIdle = function () {

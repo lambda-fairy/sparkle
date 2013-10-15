@@ -48,8 +48,7 @@ planTemplate tasks = H.ul $
                             ! A.disabled "disabled"
                             ! onlyIf (t^.taskDone) (A.checked "checked")
                     H.span $ mempty  -- for styling the checkbox
-                H.td ! A.class_ "task-title"
-                     ! A.tabindex "-1" $
+                H.td ! A.class_ "task-title" $
                     toHtml (t^.taskTitle)
 
 

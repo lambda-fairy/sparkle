@@ -179,6 +179,7 @@ var Sparkle = (function ($) { 'use strict';
         thisObj.state !== 'editing',
         'The plan should never reload while the user is editing it')
       thisObj.$root.html(data)
+      thisObj.$root.find('.task-done').css('user-select', 'none')
       thisObj.switchIdle()
       thisObj._reloadTimer = setTimeout(function () { thisObj.reload() }, 5000)
     }).fail(function (ajax) {

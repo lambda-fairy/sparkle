@@ -108,15 +108,15 @@ var Sparkle = (function ($) { 'use strict';
     }).onoff($task, 'keydown', '.task-title', function (e) {
       var task = thisObj.task
       var isBlank = task.$title.isBlank()
-      if (isBlank && e.which === 8 && e.ctrlKey) {
-        // <Shift-Backspace>
+      if (e.which === 8 && isBlank) {
+        // <Backspace>
         thisObj.deleteTask(task).then(function () {
           var $next = thisObj.getTaskById(task.id - 1) || thisObj.getTaskById(task.id)
           if ($next.length)
             thisObj.switchEditing($next, true)
         })
-      } else if (isBlank && e.which === 46 && e.ctrlKey) {
-        // <Shift-Del>
+      } else if (e.which === 46 && (isBlank || e.shiftKey)) {
+        // <Del>
         thisObj.deleteTask(task).then(function () {
           var $next = thisObj.getTaskById(task.id) || thisObj.getTaskById(task.id - 1)
           if ($next.length)
@@ -126,7 +126,7 @@ var Sparkle = (function ($) { 'use strict';
         // <Esc>
         thisObj.saveTask(task)
       } else if (e.which === 13 && e.ctrlKey) {
-        // <Shift-Return>
+        // <Ctrl-Return>
         thisObj.saveTask_(task).then(thisObj.newTask.bind(thisObj, 1 + task.id, emptyTask))
       }
     })

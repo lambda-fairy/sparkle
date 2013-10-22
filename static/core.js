@@ -125,8 +125,8 @@ var Sparkle = (function ($) { 'use strict';
       } else if (e.which === 27) {
         // <Esc>
         thisObj.saveTask(task)
-      } else if (e.which === 13 && e.ctrlKey) {
-        // <Ctrl-Return>
+      } else if (e.which === 13 && !e.shiftKey) {
+        // <Return>
         thisObj.saveTask_(task).then(thisObj.newTask.bind(thisObj, 1 + task.id, emptyTask))
       }
     })
@@ -253,7 +253,7 @@ var Sparkle = (function ($) { 'use strict';
     console.log('Saving task <%s>', this.id)
 
     var done_ = this.$done.find(':checkbox').prop('checked')
-    var title_ = this.$title.text()
+    var title_ = this.$title.text().replace(/\s+$/, '')
 
     // Make task read-only again
     this.$title.removeAttr('contenteditable')

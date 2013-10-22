@@ -178,9 +178,7 @@ var Sparkle = (function ($) { 'use strict';
       console.assert(
         thisObj.state !== 'editing',
         'The plan should never reload while the user is editing it')
-      thisObj.$root.html(data)
-      thisObj.$root.find('.task-done').css('user-select', 'none')
-      thisObj.switchIdle()
+      thisObj._replacePlan(data)
       thisObj._reloadTimer = setTimeout(function () { thisObj.reload() }, 5000)
     }).fail(function (ajax) {
       if (ajax.statusText !== 'abort') {
@@ -190,6 +188,22 @@ var Sparkle = (function ($) { 'use strict';
     })
 
     return this._reloadDeferred
+  }
+
+  Sparkle.prototype._replacePlan = function (data) {
+    var thisObj = this
+    var $root = this.$root
+    $root.html(data)
+    $root.find('.task-done').css('user-select', 'none')
+    $root.find('.task').each(function () {
+      var $task = $(this)
+      var $delete = $('<td>').addClass('task-delete').text('×')
+      $delete.click(function () {
+        thisObj.deleteTask(new Task($task))
+      })
+      $task.find('.task-title').after($delete)
+    })
+    this.switchIdle()
   }
 
   // Cancel a reload in progress.

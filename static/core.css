@@ -26,7 +26,7 @@ body {
   text-decoration: line-through;
 }
 
-.plan .task-done, .plan .task-title {
+.plan .task-done, .plan .task-title, .plan .task-delete {
   vertical-align: top;
   padding: 0.4em 0;
   /* Use 0% opacity instead of "transparent" to avoid awkward gaps */
@@ -64,7 +64,6 @@ body {
 }
 
 .plan .task-title:focus {
-  box-shadow: inset 1px 1px 4px 0 #666;
   /* Disable distracting outline on Chrome */
   outline: none;
 }
@@ -74,13 +73,32 @@ body {
   cursor: text;
 }
 
-.plan.idle .task-title:hover {
+.plan.idle .task:hover .task-title {
   border-color: #ccc;
 }
 
 .plan.idle .task-title:active,
 .plan.editing .task-title[contenteditable="true"] {
+  box-shadow: inset 1px 1px 4px 0 #666;
   border-color: #333;
+}
+
+.plan .task-delete {
+  visibility: hidden;
+  width: 1.5em;
+  text-align: center;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.plan.idle .task:hover .task-delete,
+.plan.editing .task-title[contenteditable="true"] + .task-delete {
+  visibility: visible;
+}
+
+.plan .task-delete:hover {
+  font-weight: bold;
+  color: #000;
 }
 
 .plan.locked {

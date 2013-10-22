@@ -56,7 +56,7 @@ body {
 
 .plan .task-done [type=checkbox]:checked + span {
   border-color: white;
-  background: white url(/static/tick.svg) no-repeat;
+  background: url(/static/tick.svg) no-repeat;
 }
 
 .plan .task-title {
@@ -86,9 +86,9 @@ body {
 .plan .task-delete {
   visibility: hidden;
   width: 1.5em;
-  text-align: center;
-  color: #ccc;
+  background: url(/static/cross.svg) center 0.5em no-repeat;
   cursor: pointer;
+  opacity: 0.4;
 }
 
 .plan.idle .task:hover .task-delete,
@@ -97,8 +97,7 @@ body {
 }
 
 .plan .task-delete:hover {
-  font-weight: bold;
-  color: #000;
+  opacity: 1;
 }
 
 .plan.locked {

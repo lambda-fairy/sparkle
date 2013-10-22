@@ -197,7 +197,7 @@ var Sparkle = (function ($) { 'use strict';
     $root.find('.task-done').css('user-select', 'none')
     $root.find('.task').each(function () {
       var $task = $(this)
-      var $delete = $('<td>').addClass('task-delete').text('×')
+      var $delete = $('<td>').addClass('task-delete')
       $delete.click(function () {
         thisObj.deleteTask(new Task($task))
       })

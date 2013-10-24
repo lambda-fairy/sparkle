@@ -50,12 +50,6 @@ var Sparkle = (function ($) { 'use strict';
     return this.$root.find('.task')
   }
 
-  Sparkle.prototype.getTaskById = function (id) {
-    return this.allTasks().filter(function () {
-      return $(this).data('id') == id
-    })
-  }
-
   Sparkle.prototype._transition = function (newState) {
     var oldState = this.state
     if (newState !== oldState) {
@@ -108,26 +102,32 @@ var Sparkle = (function ($) { 'use strict';
     }).onoff($task, 'keydown', '.task-title', function (e) {
       var task = thisObj.task
       var isBlank = task.$title.isBlank()
-      if (e.which === 8 && isBlank) {
+      var nTasks = thisObj.allTasks().length
+      if (e.which === 8 && isBlank && task.id > 0) {
         // <Backspace>
         thisObj.deleteTask(task).then(function () {
-          var $next = thisObj.getTaskById(task.id - 1) || thisObj.getTaskById(task.id)
-          if ($next.length)
-            thisObj.switchEditing($next, true)
+          var $tasks = thisObj.allTasks()
+          var next = $tasks[task.id - 1] || $tasks[task.id]
+          if (next)
+            thisObj.switchEditing($(next), true)
         })
-      } else if (e.which === 46 && (isBlank || e.shiftKey)) {
+      } else if (e.which === 46 && isBlank && task.id < nTasks-1) {
         // <Del>
         thisObj.deleteTask(task).then(function () {
-          var $next = thisObj.getTaskById(task.id) || thisObj.getTaskById(task.id - 1)
-          if ($next.length)
-            thisObj.switchEditing($next, true)
+          var $tasks = thisObj.allTasks()
+          var next = $tasks[task.id] || $tasks[task.id - 1]
+          if (next)
+            thisObj.switchEditing($(next), true)
         })
+      } else if (e.which === 46 && e.shiftKey) {
+        // <Shift-Del>
+        thisObj.deleteTask(task)
       } else if (e.which === 27) {
         // <Esc>
         thisObj.saveTask(task)
       } else if (e.which === 13 && !e.shiftKey) {
         // <Return>
-        thisObj.saveTask_(task).then(thisObj.newTask.bind(thisObj, 1 + task.id, emptyTask))
+        thisObj.saveTask_(task).then(thisObj.newTask.bind(thisObj, 1 + task.id))
       }
     })
 
@@ -159,7 +159,9 @@ var Sparkle = (function ($) { 'use strict';
   Sparkle.prototype.newTask = function (newId, newData) {
     var thisObj = this
     return Server.insertTask(newId, newData).then(this.reload.bind(this)).done(function () {
-      thisObj.switchEditing(thisObj.getTaskById(newId))
+      var next = thisObj.allTasks()[newId]
+      if (next)
+        thisObj.switchEditing($(next))
     })
   }
 

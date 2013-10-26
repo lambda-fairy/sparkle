@@ -12,6 +12,10 @@ body {
   border-color: #fff #eee;
 }
 
+.plan {
+  min-height: 15em;
+}
+
 .plan > ul {
   list-style: none;
   padding-left: 0;

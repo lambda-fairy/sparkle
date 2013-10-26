@@ -205,7 +205,17 @@ var Sparkle = (function ($) { 'use strict';
       })
       $task.find('.task-title').after($delete)
     })
+
     this.switchIdle()
+
+    var $add = $('<a>').attr('href', 'javascript:void 0').addClass('add-task').text('+ add task')
+    $add.click(function () {
+      thisObj.newTask(thisObj.allTasks().length)
+    })
+    $root.append($add)
+    this.u.record(function () {
+      $add.remove()
+    })
   }
 
   // Cancel a reload in progress.

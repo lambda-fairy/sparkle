@@ -99,7 +99,7 @@ var Sparkle = (function ($) { 'use strict';
     this.u.onoff($task, 'blur', '.task-title', function () {
       // When user clicks outside task, save changes
       // XXX Epic hack fix me plz
-      var timeout = setTimeout(thisObj.saveTask.bind(thisObj, thisObj.task), 150)
+      var timeout = setTimeout(thisObj.saveTask.bind(thisObj, thisObj.task), 10)
       thisObj.u.record(clearTimeout.bind(window, timeout))
     }).onoff($task, 'keydown', '.task-title', function (e) {
       var task = thisObj.task
@@ -204,7 +204,11 @@ var Sparkle = (function ($) { 'use strict';
       var $delete = $('<td>').addClass('task-delete')
       $delete.click(function () {
         thisObj.deleteTask(new Task($task))
+      }).mousedown(function () {
+        console.log('mousedown')
+        thisObj.u.run()
       })
+
       $task.find('.task-title').after($delete)
     })
 

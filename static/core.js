@@ -98,7 +98,9 @@ var Sparkle = (function ($) { 'use strict';
     var thisObj = this
     this.u.onoff($task, 'blur', '.task-title', function () {
       // When user clicks outside task, save changes
-      thisObj.saveTask(thisObj.task)
+      // XXX Epic hack fix me plz
+      var timeout = setTimeout(thisObj.saveTask.bind(thisObj, thisObj.task), 150)
+      thisObj.u.record(clearTimeout.bind(window, timeout))
     }).onoff($task, 'keydown', '.task-title', function (e) {
       var task = thisObj.task
       var isBlank = task.$title.isBlank()

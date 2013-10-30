@@ -202,11 +202,9 @@ var Sparkle = (function ($) { 'use strict';
     $root.find('.task').each(function () {
       var $task = $(this)
       var $delete = $('<td>').addClass('task-delete')
-      $delete.click(function () {
-        thisObj.deleteTask(new Task($task))
-      }).mousedown(function () {
-        console.log('mousedown')
+      $delete.mousedown(function () {
         thisObj.u.run()
+        thisObj.deleteTask(new Task($task))
       })
 
       $task.find('.task-title').after($delete)

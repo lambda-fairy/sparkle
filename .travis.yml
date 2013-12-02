@@ -1,9 +1,6 @@
 language: haskell
-before_install:
-    - sudo apt-get update
-    - cabal update
 install:
-    - sudo apt-get install c2hs
+    - sudo cabal install --global hsc2hs
     - cabal install --only-dependencies --enable-tests
 script:
     - cabal configure --enable-tests && cabal build && cabal test

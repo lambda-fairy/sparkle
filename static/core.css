@@ -1,6 +1,7 @@
 html {
   font: 100%/125% Ubuntu, sans-serif;
   height: 100%;
+  background: #f3f3f3 url(/static/background.svg) repeat;
 }
 
 body {
@@ -8,6 +9,7 @@ body {
   margin: 0 auto;
   padding: 0 1em;
   max-width: 40em;
+  background: #fbfbfb;
   border: 1px solid #eee;
   border-color: #fff #eee;
 }
@@ -54,13 +56,13 @@ body {
   top: 0.125em;  /* Minor kludge to get everything aligned */
   width: 1em;
   height: 1em;
-  background: white;
+  background: none;
   border: 1px solid #111;
   border-radius: 2px;
 }
 
 .plan .task-done [type=checkbox]:checked + span {
-  border-color: white;
+  border-color: rgba(255, 255, 255, 0);
   background: url(/static/tick.svg) no-repeat;
 }
 
@@ -125,12 +127,12 @@ footer {
 }
 
 footer p {
-  margin: 1em 0;
+  margin: 1em 0 0.5em;
   font-size: 75%;
-  color: #bbb;
+  color: #ccc;
 }
 
 footer p a {
-  color: #999;
+  color: #aaa;
   text-decoration: none;
 }
